@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue'
-import { addMcpServer, deleteMcpServer, disableMcpServer, enableMcpServer, getMcpServers, type McpServerInfo } from '../api/mcp'
+import { onMounted, reactive, ref, watch } from 'vue'
+import { addMcpServer, deleteMcpServer, disableMcpServer, enableMcpServer, getMcpServers, updateMcpNetworkPolicy, type McpServerInfo } from '../api/mcp'
 
 
 const servers = ref<McpServerInfo[]>([])
@@ -16,6 +16,11 @@ const form = reactive({
   args: '',
   env: '',
   url: '',
+  requiresNetwork: false,
+})
+
+watch(() => form.transport, transport => {
+  form.requiresNetwork = transport !== 'stdio'
 })
 
 async function refresh(): Promise<void> {
@@ -52,10 +57,11 @@ async function submitAdd(): Promise<void> {
       args: form.transport === 'stdio' ? args : undefined,
       env: form.transport === 'stdio' && Object.keys(env).length ? env : undefined,
       url: form.transport !== 'stdio' ? form.url.trim() : undefined,
+      requires_network: form.requiresNetwork,
     })
     servers.value.unshift(added)
     showForm.value = false
-    Object.assign(form, { name: '', command: '', args: '', env: '', url: '' })
+    Object.assign(form, { name: '', command: '', args: '', env: '', url: '', requiresNetwork: false })
   } catch (reason: unknown) {
     if (reason && typeof reason === 'object' && 'response' in reason) {
       const axiosErr = reason as { response?: { status?: number; data?: { detail?: string } } }
@@ -97,6 +103,19 @@ async function remove(id: number): Promise<void> {
     error.value = reason instanceof Error ? reason.message : '删除失败'
   } finally {
     deletingId.value = null
+  }
+}
+
+async function toggleNetworkPolicy(server: McpServerInfo): Promise<void> {
+  loading.value = true
+  error.value = ''
+  try {
+    const updated = await updateMcpNetworkPolicy(server.id, !server.requires_network)
+    Object.assign(server, updated)
+  } catch (reason: unknown) {
+    error.value = reason instanceof Error ? reason.message : '联网分类更新失败'
+  } finally {
+    loading.value = false
   }
 }
 
@@ -143,6 +162,11 @@ onMounted(refresh)
         URL
         <input v-model="form.url" placeholder="https://..." required />
       </label>
+      <label class="mcp-network-option">
+        <input v-model="form.requiresNetwork" type="checkbox" />
+        此服务需要“联网”许可
+        <small>stdio 工具也可能访问互联网，请按工具实际行为选择。</small>
+      </label>
       <button type="submit" class="btn-primary" :disabled="loading">确认添加</button>
     </form>
 
@@ -161,9 +185,13 @@ onMounted(refresh)
               {{ server.transport }}
               <span :class="['status-badge', server.status]">{{ server.status }}</span>
               · {{ server.tools.length }} 个工具
+              · {{ server.requires_network ? '需要联网许可' : '本地工具' }}
             </span>
           </div>
         </div>
+        <button class="btn-secondary" @click="toggleNetworkPolicy(server)" :disabled="loading">
+          {{ server.requires_network ? '设为本地' : '设为联网' }}
+        </button>
         <label class="toggle-switch">
           <input type="checkbox" :checked="server.enabled" @change="toggleServer(server)" />
           <span class="toggle-slider"></span>

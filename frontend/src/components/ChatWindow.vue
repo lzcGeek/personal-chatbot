@@ -10,7 +10,7 @@ import SettingsPanel from './SettingsPanel.vue'
 
 
 const store = useChatStore()
-const { messages, loadingHistory, generating, hasMore, error, empty } = storeToRefs(store)
+const { messages, loadingHistory, generating, hasMore, error, empty, activeSpeaker } = storeToRefs(store)
 const scroller = ref<HTMLElement>()
 const showSettings = ref(false)
 const sidebarCollapsed = ref(false)
@@ -63,7 +63,7 @@ function scrollToBottom(): void {
         <p class="eyebrow">MEMORY · MCP · SKILLS</p>
         <h1>智能聊天助手</h1>
       </div>
-      <span class="status-dot"><i /> 本地会话</span>
+      <span class="status-dot"><i /> {{ activeSpeaker ? `${activeSpeaker} 正在发言` : generating ? '正在生成回复' : '本地会话' }}</span>
       <button class="settings-toggle" aria-label="打开设置" @click="showSettings = !showSettings">⚙</button>
     </header>
 
@@ -77,7 +77,12 @@ function scrollToBottom(): void {
         <h2>从一个问题开始</h2>
         <p>对话会保存在本机，并在后续交流中检索相关长期记忆。</p>
       </div>
-      <MessageBubble v-for="message in messages" :key="message.id" :message="message" />
+      <MessageBubble
+        v-for="message in messages"
+        :key="message.id"
+        :message="message"
+        @retry="store.retry(message)"
+      />
     </section>
 
     <div v-if="error" class="error-toast" role="alert">

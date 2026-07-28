@@ -2,9 +2,20 @@
 import { ref } from 'vue'
 import McpTab from './McpTab.vue'
 import SkillTab from './SkillTab.vue'
+import KnowledgeBaseTab from './KnowledgeBaseTab.vue'
+import CharacterTab from './CharacterTab.vue'
+import MemoryTab from './MemoryTab.vue'
+import { useAuthStore } from '../stores/auth'
 
 
-const activeTab = ref<'mcp' | 'skills'>('mcp')
+const activeTab = ref<'characters' | 'memory' | 'knowledge' | 'mcp' | 'skills'>('characters')
+const authStore = useAuthStore()
+const emit = defineEmits<{ close: [] }>()
+
+async function handleLogout(): Promise<void> {
+  emit('close')
+  await authStore.logout()
+}
 </script>
 
 <template>
@@ -13,14 +24,21 @@ const activeTab = ref<'mcp' | 'skills'>('mcp')
       <div class="settings-panel">
         <header class="settings-header">
           <h2>设置</h2>
+          <button class="settings-logout" @click="handleLogout">退出登录</button>
           <button class="settings-close" aria-label="关闭设置" @click="$emit('close')">&times;</button>
         </header>
         <nav class="settings-tabs">
+          <button :class="{ active: activeTab === 'characters' }" @click="activeTab = 'characters'">角色</button>
+          <button :class="{ active: activeTab === 'memory' }" @click="activeTab = 'memory'">记忆</button>
+          <button :class="{ active: activeTab === 'knowledge' }" @click="activeTab = 'knowledge'">知识库</button>
           <button :class="{ active: activeTab === 'mcp' }" @click="activeTab = 'mcp'">MCP 服务</button>
           <button :class="{ active: activeTab === 'skills' }" @click="activeTab = 'skills'">Skills</button>
         </nav>
         <section class="settings-body">
-          <McpTab v-if="activeTab === 'mcp'" />
+          <CharacterTab v-if="activeTab === 'characters'" />
+          <MemoryTab v-else-if="activeTab === 'memory'" />
+          <KnowledgeBaseTab v-else-if="activeTab === 'knowledge'" />
+          <McpTab v-else-if="activeTab === 'mcp'" />
           <SkillTab v-else />
         </section>
       </div>

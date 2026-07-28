@@ -16,8 +16,8 @@ onMounted(async () => {
   }
 })
 
-function switchTo(id: number): void {
-  chatStore.clearMessages()
+function switchTo(id: string): void {
+  if (id === convStore.currentId) return
   convStore.setCurrent(id)
   chatStore.loadInitial()
 }
@@ -28,9 +28,9 @@ async function handleCreate(): Promise<void> {
   chatStore.loadInitial()
 }
 
-async function handleDelete(id: number): Promise<void> {
+async function handleDelete(id: string): Promise<void> {
   await convStore.remove(id)
-  chatStore.clearMessages()
+  chatStore.dropConversation(id)
   if (convStore.currentId) {
     chatStore.loadInitial()
   }
@@ -52,6 +52,7 @@ async function handleDelete(id: number): Promise<void> {
         @click="switchTo(conv.id)"
       >
         <span class="conv-title">{{ conv.title }}</span>
+        <small v-if="chatStore.isGeneratingConversation(conv.id)" class="conv-generating">生成中</small>
         <button
           class="conv-delete"
           title="删除会话"

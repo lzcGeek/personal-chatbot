@@ -1,9 +1,14 @@
 # ===== Secrets & Environment =====
 .env
+.env.*
+!.env.example
 .env.local
 .env.*.local
 *.pem
 *.key
+*.p12
+*.pfx
+id_rsa*
 
 # ===== Python =====
 __pycache__/
@@ -11,17 +16,26 @@ __pycache__/
 *.egg-info/
 *.egg
 .venv/
+.venv-eval/
 venv/
 *.whl
 .pytest_cache/
+.deepeval/
 .coverage
+coverage.xml
 htmlcov/
+.mypy_cache/
+.ruff_cache/
 *.log
+*.sqlite
+*.sqlite3
+*.db
 
 # ===== Node / Frontend =====
 node_modules/
 dist/
 .vite/
+coverage/
 *.tsbuildinfo
 
 # ===== IDE & Editors =====
@@ -31,6 +45,8 @@ dist/
 *.swo
 *~
 .trae/
+.agents/
+.codex/
 
 # ===== OS Files =====
 .DS_Store
@@ -39,6 +55,10 @@ desktop.ini
 
 # ===== Project Data (generated at runtime) =====
 backend/data/
+backend/evals/results/
+
+# Local duplicate notes (canonical guide: DEEPEVAL.md)
+/deepeval测评操作手册.md
 
 # ===== Chrome Verify (test artifacts) =====
 .chrome-verify/

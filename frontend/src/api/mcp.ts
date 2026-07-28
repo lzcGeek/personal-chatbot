@@ -11,6 +11,7 @@ export interface McpServerInfo {
   env_keys: string[]
   status: 'connected' | 'disconnected'
   enabled: boolean
+  requires_network: boolean
   last_error: string | null
   tools: Array<{ name: string; description?: string }>
   created_at: string
@@ -25,6 +26,7 @@ export interface McpServerCreate {
   url?: string
   headers?: Record<string, string>
   env?: Record<string, string>
+  requires_network?: boolean
 }
 
 export async function getMcpServers(): Promise<McpServerInfo[]> {
@@ -47,4 +49,14 @@ export async function enableMcpServer(id: number): Promise<void> {
 
 export async function disableMcpServer(id: number): Promise<void> {
   await api.post(`/mcp/servers/${id}/disable`)
+}
+
+export async function updateMcpNetworkPolicy(
+  id: number,
+  requiresNetwork: boolean,
+): Promise<McpServerInfo> {
+  const response = await api.patch<McpServerInfo>(`/mcp/servers/${id}`, {
+    requires_network: requiresNetwork,
+  })
+  return response.data
 }

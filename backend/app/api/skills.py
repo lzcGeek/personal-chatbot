@@ -2,13 +2,18 @@ import logging
 from pathlib import Path
 
 import yaml
-from fastapi import APIRouter, HTTPException, Request, UploadFile, status
+from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile, status
 
 from app.schemas.skill import SkillCreate
+from app.services.auth_dependencies import get_current_user
 
 
 logger = logging.getLogger(__name__)
-router = APIRouter(prefix="/api/skills", tags=["skills"])
+router = APIRouter(
+    prefix="/api/skills",
+    tags=["skills"],
+    dependencies=[Depends(get_current_user)],
+)
 
 
 @router.get("")

@@ -1,6 +1,11 @@
 from pydantic import BaseModel, Field
+from uuid import UUID
 
 
 class ChatRequest(BaseModel):
     message: str = Field(min_length=1)
-    conversation_id: int | None = None
+    conversation_id: UUID
+    allow_network: bool = False
+    client_request_id: UUID | None = None
+    target_character_id: UUID | None = None
+    max_speakers: int | None = Field(default=None, ge=1, le=8)

@@ -3,9 +3,28 @@ import axios from 'axios'
 import type { ChatMessage, HistoryResponse, StreamEvent } from '../types/chat'
 
 
-export const api = axios.create({ baseURL: '/api' })
+export const api = axios.create({ baseURL: '/api', withCredentials: true })
 
-export async function getHistory(beforeId?: number, conversationId?: number): Promise<HistoryResponse> {
+api.interceptors.request.use((config) => {
+  const method = (config.method || 'get').toLowerCase()
+  if (!['get', 'head', 'options'].includes(method)) {
+    const csrf = readCookie('newagent_csrf')
+    if (csrf) config.headers.set('X-CSRF-Token', csrf)
+  }
+  return config
+})
+
+api.interceptors.response.use(
+  response => response,
+  (error) => {
+    if (error?.response?.status === 401) {
+      window.dispatchEvent(new Event('auth:unauthorized'))
+    }
+    return Promise.reject(error)
+  },
+)
+
+export async function getHistory(beforeId?: number, conversationId?: string): Promise<HistoryResponse> {
   const params: Record<string, string> = { limit: '30' }
   if (beforeId) params.before_id = String(beforeId)
   if (conversationId) params.conversation_id = String(conversationId)
@@ -17,12 +36,29 @@ export async function streamChat(
   message: string,
   onEvent: (event: StreamEvent) => void,
   signal?: AbortSignal,
-  conversationId?: number,
+  conversationId?: string,
+  allowNetwork = false,
+  clientRequestId?: string,
+  targetCharacterId?: string,
+  maxSpeakers?: number,
 ): Promise<void> {
+  const csrf = readCookie('newagent_csrf')
   const response = await fetch('/api/chat/stream', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', Accept: 'text/event-stream' },
-    body: JSON.stringify({ message, conversation_id: conversationId ?? null }),
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'text/event-stream',
+      ...(csrf ? { 'X-CSRF-Token': csrf } : {}),
+    },
+    credentials: 'same-origin',
+    body: JSON.stringify({
+      message,
+      conversation_id: conversationId ?? null,
+      allow_network: allowNetwork,
+      client_request_id: clientRequestId ?? null,
+      target_character_id: targetCharacterId ?? null,
+      max_speakers: maxSpeakers ?? null,
+    }),
     signal,
   })
   if (!response.ok) {
@@ -51,6 +87,12 @@ export async function streamChat(
     const parsed = parseSseBlock(buffer)
     if (parsed) onEvent(parsed)
   }
+}
+
+function readCookie(name: string): string | null {
+  const prefix = `${encodeURIComponent(name)}=`
+  const item = document.cookie.split('; ').find(value => value.startsWith(prefix))
+  return item ? decodeURIComponent(item.slice(prefix.length)) : null
 }
 
 function parseSseBlock(block: string): StreamEvent | null {

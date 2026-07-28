@@ -1,6 +1,8 @@
 import asyncio
 import logging
 import os
+import time
+import uuid
 from collections.abc import AsyncIterator
 from contextlib import AsyncExitStack, asynccontextmanager
 from dataclasses import dataclass, field
@@ -17,6 +19,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.models.mcp_server import McpServer
+from app.services.observability import record_duration, record_metric
 
 
 logger = logging.getLogger(__name__)
@@ -44,13 +47,15 @@ class McpManager:
         allowed_commands: set[str],
         reconnect_seconds: float,
         tool_timeout_seconds: float,
+        network_tools_enabled: bool = True,
     ) -> None:
         self.session_factory = session_factory
         self.allowed_commands = allowed_commands
         self.reconnect_seconds = reconnect_seconds
         self.tool_timeout_seconds = tool_timeout_seconds
+        self.network_tools_enabled = network_tools_enabled
         self._workers: dict[int, ServerWorker] = {}
-        self._tool_routes: dict[str, tuple[int, str]] = {}
+        self._tool_routes: dict[tuple[uuid.UUID, str], tuple[int, str, bool]] = {}
         self._closing = False
 
     async def restore(self) -> None:
@@ -99,9 +104,16 @@ class McpManager:
             return_exceptions=True,
         )
 
-    async def set_enabled(self, server_id: int, enabled: bool) -> bool:
+    async def set_enabled(self, server_id: int, user_id: uuid.UUID, enabled: bool) -> bool:
         async with self.session_factory() as session:
-            server = await session.get(McpServer, server_id)
+            server = (
+                await session.execute(
+                    select(McpServer).where(
+                        McpServer.id == server_id,
+                        McpServer.user_id == user_id,
+                    )
+                )
+            ).scalar_one_or_none()
             if server is None:
                 return False
             server.enabled = enabled
@@ -113,35 +125,81 @@ class McpManager:
         return True
 
     async def execute_tool(
-        self, exposed_name: str, arguments: dict[str, Any]
+        self,
+        user_id: uuid.UUID,
+        exposed_name: str,
+        arguments: dict[str, Any],
+        allow_network: bool = False,
     ) -> dict[str, Any]:
-        route = self._tool_routes.get(exposed_name)
+        route = self._tool_routes.get((user_id, exposed_name))
         if route is None:
             return {"ok": False, "error": f"Unknown or unavailable tool: {exposed_name}"}
-        server_id, original_name = route
+        server_id, original_name, requires_network = route
+        if requires_network and (not allow_network or not self.network_tools_enabled):
+            return {
+                "ok": False,
+                "code": "network_access_denied",
+                "error": "Network access is not allowed for this request",
+            }
         worker = self._workers.get(server_id)
         if worker is None or worker.task is None or worker.task.done():
-            return {"ok": False, "error": f"MCP server is disconnected: {server_id}"}
+            return {
+                "ok": False,
+                "code": "mcp_disconnected",
+                "error": "The requested tool is temporarily unavailable",
+            }
         tool = next((item for item in worker.tools if item["name"] == original_name), None)
         if tool is None:
-            return {"ok": False, "error": f"Tool schema is unavailable: {exposed_name}"}
+            return {
+                "ok": False,
+                "code": "mcp_schema_unavailable",
+                "error": "The requested tool is temporarily unavailable",
+            }
         try:
             validate(instance=arguments, schema=tool.get("inputSchema") or {"type": "object"})
         except ValidationError as exc:
-            return {"ok": False, "error": f"Invalid tool arguments: {exc.message}"}
+            return {
+                "ok": False,
+                "code": "mcp_invalid_arguments",
+                "error": f"Invalid tool arguments: {exc.message}",
+            }
 
         future: asyncio.Future[dict[str, Any]] = asyncio.get_running_loop().create_future()
         await worker.queue.put(ToolRequest(original_name, arguments, future))
+        started = time.monotonic()
         try:
-            return await asyncio.wait_for(future, timeout=self.tool_timeout_seconds)
+            result = await asyncio.wait_for(future, timeout=self.tool_timeout_seconds)
+            if not result.get("ok"):
+                record_metric("mcp.tool.error")
+            return result
         except TimeoutError:
             if not future.done():
                 future.cancel()
-            return {"ok": False, "error": f"Tool call timed out: {exposed_name}"}
+            return {
+                "ok": False,
+                "code": "mcp_timeout",
+                "error": "The tool call timed out",
+            }
+        finally:
+            if requires_network:
+                record_duration(
+                    "mcp.network_tool.duration",
+                    int((time.monotonic() - started) * 1000),
+                )
 
-    def openai_tools(self) -> list[dict[str, Any]]:
+    def openai_tools(
+        self, user_id: uuid.UUID, allow_network: bool = False
+    ) -> list[dict[str, Any]]:
         tools: list[dict[str, Any]] = []
-        for exposed_name, (server_id, original_name) in self._tool_routes.items():
+        for (route_user_id, exposed_name), (
+            server_id,
+            original_name,
+            requires_network,
+        ) in self._tool_routes.items():
+            if route_user_id != user_id:
+                continue
+            if requires_network and (not allow_network or not self.network_tools_enabled):
+                continue
             worker = self._workers.get(server_id)
             if worker is None or worker.task is None or worker.task.done():
                 continue
@@ -163,6 +221,18 @@ class McpManager:
                 }
             )
         return tools
+
+    def has_network_tools(self, user_id: uuid.UUID) -> bool:
+        if not self.network_tools_enabled:
+            return False
+        return any(
+            route_user_id == user_id and route[2]
+            for (route_user_id, _), route in self._tool_routes.items()
+        )
+
+    def is_network_tool(self, user_id: uuid.UUID, exposed_name: str) -> bool:
+        route = self._tool_routes.get((user_id, exposed_name))
+        return bool(route and route[2])
 
     async def _run_worker(self, server_id: int, worker: ServerWorker) -> None:
         while not self._closing:
@@ -259,11 +329,23 @@ class McpManager:
         server_slug = self._sanitize_name(server.name)
         for tool in tools:
             exposed = f"{server_slug}__{self._sanitize_name(tool['name'])}"[:64]
-            self._tool_routes[exposed] = (server.id, tool["name"])
+            self._tool_routes[(server.user_id, exposed)] = (
+                server.id,
+                tool["name"],
+                server.requires_network,
+            )
+
+    def update_network_policy(self, server_id: int, requires_network: bool) -> None:
+        self._tool_routes = {
+            key: (route[0], route[1], requires_network)
+            if route[0] == server_id
+            else route
+            for key, route in self._tool_routes.items()
+        }
 
     def _remove_routes(self, server_id: int) -> None:
         self._tool_routes = {
-            name: route for name, route in self._tool_routes.items() if route[0] != server_id
+            key: route for key, route in self._tool_routes.items() if route[0] != server_id
         }
 
     @staticmethod

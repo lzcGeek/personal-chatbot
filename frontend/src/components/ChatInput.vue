@@ -1,15 +1,32 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, ref } from 'vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { getSkills, type SkillInfo } from '../api/skills'
+import { getConversationMembers, type ConversationMember } from '../api/conversations'
+import { loadNetworkPreference } from '../chat-options'
+import { useConversationStore } from '../stores/conversations'
 
 
 const props = defineProps<{ disabled: boolean }>()
-const emit = defineEmits<{ send: [message: string] }>()
+const emit = defineEmits<{
+  send: [message: string, allowNetwork: boolean, targetCharacterId?: string, maxSpeakers?: number]
+}>()
+const conversations = useConversationStore()
 const value = ref('')
 const textarea = ref<HTMLTextAreaElement>()
 const skills = ref<SkillInfo[]>([])
 const showCompletions = ref(false)
 const selectedIndex = ref(0)
+const allowNetwork = ref(loadNetworkPreference(localStorage))
+const members = ref<ConversationMember[]>([])
+const targetCharacterId = ref('')
+const maxSpeakers = ref(1)
+const currentConversation = computed(() =>
+  conversations.conversations.find(item => item.id === conversations.currentId),
+)
+const isGroup = computed(() => currentConversation.value?.mode === 'group')
+const needsManualTarget = computed(() =>
+  isGroup.value && currentConversation.value?.routing_strategy === 'manual',
+)
 
 const slashMode = computed(() => value.value.trimStart().startsWith('/') && !value.value.includes(' '))
 const filteredSkills = computed(() => {
@@ -22,11 +39,29 @@ onMounted(async () => {
   try { skills.value = await getSkills() } catch { /* ignore */ }
 })
 
+watch(
+  () => conversations.currentId,
+  async id => {
+    members.value = id ? (await getConversationMembers(id)).filter(item => item.enabled) : []
+    targetCharacterId.value = members.value[0]?.character_id ?? ''
+    maxSpeakers.value = currentConversation.value?.max_speakers_per_turn ?? 1
+  },
+  { immediate: true },
+)
+
 function submit(): void {
   const message = value.value.trim()
   if (!message || props.disabled) return
   showCompletions.value = false
-  emit('send', message)
+  localStorage.setItem('chat-allow-network', String(allowNetwork.value))
+  if (needsManualTarget.value && !targetCharacterId.value) return
+  emit(
+    'send',
+    message,
+    allowNetwork.value,
+    needsManualTarget.value ? targetCharacterId.value : undefined,
+    isGroup.value ? maxSpeakers.value : undefined,
+  )
   value.value = ''
   nextTick(() => resize())
 }
@@ -108,5 +143,31 @@ function resize(): void {
         {{ disabled ? '生成中' : '发送' }}
       </button>
     </form>
+    <label
+      class="network-control"
+      title="仅控制本次回答能否调用标记为需要联网的 MCP 工具；不影响模型服务或后台连接。"
+    >
+      <input v-model="allowNetwork" type="checkbox" :disabled="disabled" />
+      <span>联网</span>
+      <small>{{ allowNetwork ? '允许本次回答调用网络工具' : '仅使用本地能力' }}</small>
+    </label>
+    <div v-if="isGroup" class="group-turn-controls">
+      <label v-if="needsManualTarget">
+        本轮发言角色
+        <select v-model="targetCharacterId" :disabled="disabled">
+          <option v-for="member in members" :key="member.id" :value="member.character_id">{{ member.name }}</option>
+        </select>
+      </label>
+      <label v-if="currentConversation?.routing_strategy === 'auto'">
+        本轮最多角色
+        <input
+          v-model.number="maxSpeakers"
+          type="number"
+          min="1"
+          :max="currentConversation.max_speakers_per_turn"
+          :disabled="disabled"
+        />
+      </label>
+    </div>
   </div>
 </template>

@@ -1,26 +1,44 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
-import { createConversation, deleteConversation, getConversations, type ConversationInfo } from '../api/conversations'
+import {
+  createConversation,
+  deleteConversation,
+  getConversations,
+  updateConversationSettings,
+  type ConversationInfo,
+  type RetrievalMode,
+} from '../api/conversations'
 
 
 export const useConversationStore = defineStore('conversations', () => {
   const conversations = ref<ConversationInfo[]>([])
-  const currentId = ref<number | null>(null)
+  const currentId = ref<string | null>(null)
   const loading = ref(false)
   const error = ref('')
+  let loadPromise: Promise<void> | null = null
 
   async function load(): Promise<void> {
+    if (loadPromise) return loadPromise
     loading.value = true
-    try {
-      conversations.value = await getConversations()
-    } catch (reason: unknown) {
-      error.value = reason instanceof Error ? reason.message : '加载失败'
-    } finally {
-      loading.value = false
-    }
+    error.value = ''
+    loadPromise = (async () => {
+      try {
+        conversations.value = await getConversations()
+        const currentExists = conversations.value.some(conv => conv.id === currentId.value)
+        if (!currentExists) {
+          currentId.value = conversations.value[0]?.id ?? null
+        }
+      } catch (reason: unknown) {
+        error.value = reason instanceof Error ? reason.message : '加载失败'
+      } finally {
+        loading.value = false
+        loadPromise = null
+      }
+    })()
+    return loadPromise
   }
 
-  function setCurrent(id: number | null): void {
+  function setCurrent(id: string | null): void {
     currentId.value = id
   }
 
@@ -37,7 +55,7 @@ export const useConversationStore = defineStore('conversations', () => {
     }
   }
 
-  async function remove(id: number): Promise<void> {
+  async function remove(id: string): Promise<void> {
     loading.value = true
     try {
       await deleteConversation(id)
@@ -58,5 +76,37 @@ export const useConversationStore = defineStore('conversations', () => {
     }
   }
 
-  return { conversations, currentId, loading, error, load, setCurrent, create, remove }
+  async function setRetrievalMode(id: string, mode: RetrievalMode): Promise<void> {
+    try {
+      const updated = await updateConversationSettings(id, { retrieval_mode: mode })
+      const index = conversations.value.findIndex(conversation => conversation.id === id)
+      if (index !== -1) conversations.value[index] = updated
+      error.value = ''
+    } catch (reason: unknown) {
+      error.value = reason instanceof Error ? reason.message : '更新知识检索模式失败'
+      throw reason
+    }
+  }
+
+  async function updateSettings(
+    id: string,
+    settings: Parameters<typeof updateConversationSettings>[1],
+  ): Promise<void> {
+    const updated = await updateConversationSettings(id, settings)
+    const index = conversations.value.findIndex(conversation => conversation.id === id)
+    if (index !== -1) conversations.value[index] = updated
+  }
+
+  return {
+    conversations,
+    currentId,
+    loading,
+    error,
+    load,
+    setCurrent,
+    create,
+    remove,
+    setRetrievalMode,
+    updateSettings,
+  }
 })

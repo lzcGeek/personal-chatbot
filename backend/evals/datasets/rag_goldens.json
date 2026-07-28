@@ -1,0 +1,74 @@
+[
+  {
+    "id": "supported-document-formats",
+    "input": "NewAgent 支持上传哪些文档格式？",
+    "expected_output": "NewAgent 支持 PDF、DOCX、TXT 和 Markdown 四种文档格式。",
+    "acceptable_sources": ["README.md", "PERSONAL_GRAPH_RAG.md"]
+  },
+  {
+    "id": "storage-responsibilities",
+    "input": "PostgreSQL、Qdrant 和 Neo4j 在 NewAgent 中分别负责保存什么数据？",
+    "expected_output": "PostgreSQL 是业务数据与文档正文的事实来源；Qdrant 保存可重建的向量索引；Neo4j 保存带来源的实体和事实。",
+    "acceptable_sources": ["README.md", "PERSONAL_GRAPH_RAG.md", "MULTI_USER_REFACTOR.md"]
+  },
+  {
+    "id": "multi-user-isolation",
+    "input": "NewAgent 如何防止个人文档和检索结果发生跨用户串读？",
+    "expected_output": "系统在 PostgreSQL 查询、Qdrant 过滤和 Neo4j 查询中都限制当前 user_id，并在向量命中后回到 PostgreSQL 再次校验所有权；同名实体也只在用户内部链接。",
+    "acceptable_sources": ["README.md", "PERSONAL_GRAPH_RAG.md", "MULTI_USER_REFACTOR.md"]
+  },
+  {
+    "id": "document-indexing-flow",
+    "input": "用户上传文档后，NewAgent 会经过哪些主要索引步骤？",
+    "expected_output": "系统验证并保存文件，在 PostgreSQL 同一事务写入 Document 和 outbox；Worker 解析和分块文档，将正文写入 PostgreSQL、Embedding 写入 Qdrant，并从片段抽取实体和事实写入 Neo4j。",
+    "acceptable_sources": ["PERSONAL_GRAPH_RAG.md"]
+  },
+  {
+    "id": "graph-failure-fallback",
+    "input": "如果文档的知识图谱构建失败，用户是否还能检索该文档？为什么？",
+    "expected_output": "文本索引与图谱构建相互独立；文本索引完成后文档即可检索，因此图谱构建失败只会降低 GraphRAG 增强能力，不会阻塞文本 RAG。",
+    "acceptable_sources": ["PERSONAL_GRAPH_RAG.md"]
+  },
+  {
+    "id": "document-deletion-consistency",
+    "input": "NewAgent 删除个人文档时，如何保证 PostgreSQL、Qdrant、Neo4j 和原文件之间的一致性？",
+    "expected_output": "删除接口先把文档标记为 deleting 并写入 outbox，Worker 幂等删除 Qdrant 向量、Neo4j 图数据、本地原文件和 PostgreSQL 分块，最后标记为 deleted；失败任务会保留并指数退避重试。",
+    "acceptable_sources": ["PERSONAL_GRAPH_RAG.md"]
+  },
+  {
+    "id": "qdrant-ownership-recheck",
+    "input": "为什么 Qdrant 返回文档片段后，还要回到 PostgreSQL 再做所有权校验？",
+    "expected_output": "Qdrant 是可重建的检索索引而不是权限和正文的事实来源，不能只信任其 payload；回到 PostgreSQL 按当前用户校验所有权，可以降低错误索引或伪造数据导致越权访问的风险。",
+    "acceptable_sources": ["PERSONAL_GRAPH_RAG.md", "MULTI_USER_REFACTOR.md"]
+  },
+  {
+    "id": "citation-format",
+    "input": "NewAgent 回答个人文档问题时，如何向用户展示证据来源？",
+    "expected_output": "回答使用 [Source N] 标记来源，消息同时保存结构化 citation，前端可以展开查看文件名、页码或章节等来源信息。",
+    "acceptable_sources": ["README.md", "PERSONAL_GRAPH_RAG.md"]
+  },
+  {
+    "id": "password-and-session-security",
+    "input": "NewAgent 如何保存用户密码和浏览器会话凭证？",
+    "expected_output": "密码使用 Argon2id 单向哈希；浏览器使用 HttpOnly Session Cookie；数据库只保存 Session Token 的 SHA-256 哈希，并使用 CSRF Token 保护写请求。",
+    "acceptable_sources": ["README.md", "MULTI_USER_REFACTOR.md"]
+  },
+  {
+    "id": "network-control",
+    "input": "聊天输入区关闭联网后，NewAgent 如何阻止联网 MCP 工具被调用？",
+    "expected_output": "联网关闭时，后端既会从可用工具列表中过滤需要联网的 MCP 工具，也会在实际执行入口拒绝调用，因此客户端伪造请求也不能绕过限制。",
+    "acceptable_sources": ["README.md"]
+  },
+  {
+    "id": "scanned-pdf-limit",
+    "input": "NewAgent 当前能否识别扫描版 PDF 中的图片文字？",
+    "expected_output": "当前尚未包含 OCR，因此不能可靠识别扫描版 PDF 的图片文字；后续可以接入 PaddleOCR 或云 OCR。",
+    "acceptable_sources": ["PERSONAL_GRAPH_RAG.md"]
+  },
+  {
+    "id": "document-evidence-security",
+    "input": "NewAgent 如何防止上传文档中的恶意文字覆盖系统指令或诱导调用工具？",
+    "expected_output": "检索证据会放入 document-evidence 边界，并被明确视为不可信资料，不能覆盖系统指令，也不能因为文档内容而触发工具调用。",
+    "acceptable_sources": ["PERSONAL_GRAPH_RAG.md"]
+  }
+]
