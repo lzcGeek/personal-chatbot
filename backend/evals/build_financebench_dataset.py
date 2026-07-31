@@ -3,17 +3,25 @@
 from __future__ import annotations
 
 import json
+import sys
 from collections import Counter
 from pathlib import Path
 from typing import Any
 
-
 EVALS_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = EVALS_DIR.parents[1]
+BACKEND_DIR = EVALS_DIR.parent
+if str(BACKEND_DIR) not in sys.path:
+    sys.path.insert(0, str(BACKEND_DIR))
+
+from evals.evaluation_scoring import infer_evaluation_spec
+
+
 FINANCEBENCH_ROOT = PROJECT_ROOT / "data" / "financebench-main"
 SOURCE_PATH = FINANCEBENCH_ROOT / "data" / "financebench_open_source.jsonl"
 PDF_DIR = FINANCEBENCH_ROOT / "pdfs"
 OUTPUT_DIR = EVALS_DIR / "datasets"
+OVERRIDES_PATH = OUTPUT_DIR / "financebench_eval_overrides.json"
 
 # These are the five FinanceBench documents with the most open-source annotations.
 # Together they provide exactly 30 original, human-annotated cases. The split is
@@ -66,13 +74,21 @@ def compact_evidence(evidence: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def normalize(row: dict[str, Any], split: str) -> dict[str, Any]:
+def normalize(
+    row: dict[str, Any],
+    split: str,
+    overrides: dict[str, Any],
+) -> dict[str, Any]:
     doc_name = str(row["doc_name"])
-    return {
+    normalized = {
         "id": str(row["financebench_id"]),
         "input": str(row["question"]),
         "expected_output": str(row["answer"]),
         "acceptable_sources": [f"{doc_name}.pdf"],
+        "evaluation": infer_evaluation_spec(
+            str(row["answer"]),
+            row.get("question_reasoning"),
+        ),
         "metadata": {
             "benchmark": "FinanceBench OPEN_SOURCE",
             "split": split,
@@ -85,6 +101,10 @@ def normalize(row: dict[str, Any], split: str) -> dict[str, Any]:
             "gold_evidence": [compact_evidence(item) for item in row.get("evidence", [])],
         },
     }
+    override = overrides.get(str(row["financebench_id"])) or {}
+    if "evaluation" in override:
+        normalized["evaluation"] = override["evaluation"]
+    return normalized
 
 
 def write_json(path: Path, value: Any) -> None:
@@ -127,6 +147,11 @@ def main() -> None:
         )
 
     selected_documents = DEV_DOCUMENTS | TEST_DOCUMENTS
+    overrides = (
+        json.loads(OVERRIDES_PATH.read_text(encoding="utf-8"))
+        if OVERRIDES_PATH.is_file()
+        else {}
+    )
     source_rows = read_jsonl(SOURCE_PATH)
     selected_rows = [
         row for row in source_rows if str(row.get("doc_name")) in selected_documents
@@ -142,8 +167,8 @@ def main() -> None:
     if len(test_rows) != EXPECTED_COUNTS["test"]:
         raise RuntimeError(f"Expected 12 test cases, found {len(test_rows)}")
 
-    normalized_dev = [normalize(row, "dev") for row in dev_rows]
-    normalized_test = [normalize(row, "test") for row in test_rows]
+    normalized_dev = [normalize(row, "dev", overrides) for row in dev_rows]
+    normalized_test = [normalize(row, "test", overrides) for row in test_rows]
     normalized_all = normalized_dev + normalized_test
 
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)

@@ -4,6 +4,10 @@
 
 DeepEval 安装在独立的 `backend/.venv-eval` 虚拟环境中，避免其 `click` 版本要求与后端主环境中的依赖发生冲突。正常启动后端仍使用 `backend/.venv`。
 
+当前 RAG 评测已经把检索、计算和生成分开：黄金证据 Recall/MRR 与数值答案
+正确性由本地确定性指标计算，Faithfulness 和 Answer Relevancy 才调用 DeepEval
+裁判模型。完整参数、指标解释和读数方法见 `FINANCEBENCH_EVAL.md`。
+
 ## 1. 当前环境
 
 - 后端运行环境：`backend/.venv`

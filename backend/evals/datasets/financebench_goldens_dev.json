@@ -6,6 +6,21 @@
     "acceptable_sources": [
       "AMCOR_2023_10K.pdf"
     ],
+    "evaluation": {
+      "task_type": "calculation",
+      "gold_match_threshold": 0.6,
+      "rank_pass_k": 3,
+      "numeric_answer": {
+        "expected_values": [
+          0.67,
+          0.69
+        ],
+        "absolute_tolerance": 0.02,
+        "relative_tolerance": 0.01,
+        "direction": "improved",
+        "note": "FinanceBench defines quick ratio as (current assets - inventory) / current liabilities for this case."
+      }
+    },
     "metadata": {
       "benchmark": "FinanceBench OPEN_SOURCE",
       "split": "dev",
@@ -31,6 +46,11 @@
     "acceptable_sources": [
       "AMCOR_2023_10K.pdf"
     ],
+    "evaluation": {
+      "task_type": "direct",
+      "gold_match_threshold": 0.6,
+      "rank_pass_k": 3
+    },
     "metadata": {
       "benchmark": "FinanceBench OPEN_SOURCE",
       "split": "dev",
@@ -56,6 +76,11 @@
     "acceptable_sources": [
       "AMCOR_2023_10K.pdf"
     ],
+    "evaluation": {
+      "task_type": "direct",
+      "gold_match_threshold": 0.6,
+      "rank_pass_k": 3
+    },
     "metadata": {
       "benchmark": "FinanceBench OPEN_SOURCE",
       "split": "dev",
@@ -81,6 +106,21 @@
     "acceptable_sources": [
       "AMCOR_2023_10K.pdf"
     ],
+    "evaluation": {
+      "task_type": "calculation",
+      "gold_match_threshold": 0.6,
+      "rank_pass_k": 3,
+      "numeric_answer": {
+        "expected_values": [
+          18.5,
+          19.4
+        ],
+        "absolute_tolerance": 0.05,
+        "relative_tolerance": 0.01,
+        "direction": "declined",
+        "note": "Check the two reported gross-margin percentages and direction; do not require the rounded 0.8 percentage-point delta to appear verbatim."
+      }
+    },
     "metadata": {
       "benchmark": "FinanceBench OPEN_SOURCE",
       "split": "dev",
@@ -106,6 +146,11 @@
     "acceptable_sources": [
       "AMERICANEXPRESS_2022_10K.pdf"
     ],
+    "evaluation": {
+      "task_type": "direct",
+      "gold_match_threshold": 0.6,
+      "rank_pass_k": 3
+    },
     "metadata": {
       "benchmark": "FinanceBench OPEN_SOURCE",
       "split": "dev",
@@ -131,6 +176,11 @@
     "acceptable_sources": [
       "AMERICANEXPRESS_2022_10K.pdf"
     ],
+    "evaluation": {
+      "task_type": "direct",
+      "gold_match_threshold": 0.6,
+      "rank_pass_k": 3
+    },
     "metadata": {
       "benchmark": "FinanceBench OPEN_SOURCE",
       "split": "dev",
@@ -156,6 +206,11 @@
     "acceptable_sources": [
       "AMERICANEXPRESS_2022_10K.pdf"
     ],
+    "evaluation": {
+      "task_type": "calculation",
+      "gold_match_threshold": 0.6,
+      "rank_pass_k": 3
+    },
     "metadata": {
       "benchmark": "FinanceBench OPEN_SOURCE",
       "split": "dev",
@@ -181,6 +236,11 @@
     "acceptable_sources": [
       "AMERICANEXPRESS_2022_10K.pdf"
     ],
+    "evaluation": {
+      "task_type": "calculation",
+      "gold_match_threshold": 0.6,
+      "rank_pass_k": 3
+    },
     "metadata": {
       "benchmark": "FinanceBench OPEN_SOURCE",
       "split": "dev",
@@ -206,6 +266,20 @@
     "acceptable_sources": [
       "AMERICANEXPRESS_2022_10K.pdf"
     ],
+    "evaluation": {
+      "task_type": "calculation",
+      "gold_match_threshold": 0.6,
+      "rank_pass_k": 3,
+      "numeric_answer": {
+        "expected_values": [
+          24.6,
+          21.6
+        ],
+        "absolute_tolerance": 0.05,
+        "relative_tolerance": 0.01,
+        "direction": "declined"
+      }
+    },
     "metadata": {
       "benchmark": "FinanceBench OPEN_SOURCE",
       "split": "dev",
@@ -231,6 +305,11 @@
     "acceptable_sources": [
       "AMERICANEXPRESS_2022_10K.pdf"
     ],
+    "evaluation": {
+      "task_type": "direct",
+      "gold_match_threshold": 0.6,
+      "rank_pass_k": 3
+    },
     "metadata": {
       "benchmark": "FinanceBench OPEN_SOURCE",
       "split": "dev",
@@ -256,6 +335,11 @@
     "acceptable_sources": [
       "AMERICANEXPRESS_2022_10K.pdf"
     ],
+    "evaluation": {
+      "task_type": "direct",
+      "gold_match_threshold": 0.6,
+      "rank_pass_k": 3
+    },
     "metadata": {
       "benchmark": "FinanceBench OPEN_SOURCE",
       "split": "dev",
@@ -281,6 +365,22 @@
     "acceptable_sources": [
       "BOEING_2022_10K.pdf"
     ],
+    "evaluation": {
+      "task_type": "calculation",
+      "gold_match_threshold": 0.6,
+      "rank_pass_k": 3,
+      "numeric_answer": {
+        "expected_values": [
+          20.0,
+          39.0,
+          35.0,
+          26.0
+        ],
+        "absolute_tolerance": 0.05,
+        "relative_tolerance": 0.01,
+        "direction": null
+      }
+    },
     "metadata": {
       "benchmark": "FinanceBench OPEN_SOURCE",
       "split": "dev",
@@ -306,6 +406,11 @@
     "acceptable_sources": [
       "BOEING_2022_10K.pdf"
     ],
+    "evaluation": {
+      "task_type": "direct",
+      "gold_match_threshold": 0.6,
+      "rank_pass_k": 3
+    },
     "metadata": {
       "benchmark": "FinanceBench OPEN_SOURCE",
       "split": "dev",
@@ -331,6 +436,22 @@
     "acceptable_sources": [
       "BOEING_2022_10K.pdf"
     ],
+    "evaluation": {
+      "task_type": "calculation",
+      "gold_match_threshold": 0.6,
+      "rank_pass_k": 3,
+      "numeric_answer": {
+        "expected_values": [
+          3017.0,
+          3502.0,
+          4.8,
+          5.3
+        ],
+        "absolute_tolerance": 0.05,
+        "relative_tolerance": 0.01,
+        "direction": "improved"
+      }
+    },
     "metadata": {
       "benchmark": "FinanceBench OPEN_SOURCE",
       "split": "dev",
@@ -356,6 +477,11 @@
     "acceptable_sources": [
       "BOEING_2022_10K.pdf"
     ],
+    "evaluation": {
+      "task_type": "direct",
+      "gold_match_threshold": 0.6,
+      "rank_pass_k": 3
+    },
     "metadata": {
       "benchmark": "FinanceBench OPEN_SOURCE",
       "split": "dev",
@@ -391,6 +517,11 @@
     "acceptable_sources": [
       "BOEING_2022_10K.pdf"
     ],
+    "evaluation": {
+      "task_type": "direct",
+      "gold_match_threshold": 0.6,
+      "rank_pass_k": 3
+    },
     "metadata": {
       "benchmark": "FinanceBench OPEN_SOURCE",
       "split": "dev",
@@ -416,6 +547,11 @@
     "acceptable_sources": [
       "BOEING_2022_10K.pdf"
     ],
+    "evaluation": {
+      "task_type": "direct",
+      "gold_match_threshold": 0.6,
+      "rank_pass_k": 3
+    },
     "metadata": {
       "benchmark": "FinanceBench OPEN_SOURCE",
       "split": "dev",
@@ -441,6 +577,11 @@
     "acceptable_sources": [
       "BOEING_2022_10K.pdf"
     ],
+    "evaluation": {
+      "task_type": "direct",
+      "gold_match_threshold": 0.6,
+      "rank_pass_k": 3
+    },
     "metadata": {
       "benchmark": "FinanceBench OPEN_SOURCE",
       "split": "dev",

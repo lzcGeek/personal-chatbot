@@ -57,12 +57,18 @@ class LlmClient:
         messages: list[dict[str, Any]],
         tools: list[dict[str, Any]] | None = None,
         temperature: float = 0.7,
+        top_p: float | None = None,
+        max_tokens: int | None = None,
     ) -> LlmTurn:
         kwargs: dict[str, Any] = {
             "model": self.model,
             "messages": messages,
             "temperature": temperature,
         }
+        if top_p is not None:
+            kwargs["top_p"] = top_p
+        if max_tokens is not None:
+            kwargs["max_tokens"] = max_tokens
         if tools:
             kwargs["tools"] = tools
             kwargs["tool_choice"] = "auto"
@@ -77,12 +83,21 @@ class LlmClient:
         self,
         messages: list[dict[str, Any]],
         tools: list[dict[str, Any]] | None = None,
+        temperature: float | None = None,
+        top_p: float | None = None,
+        max_tokens: int | None = None,
     ) -> AsyncIterator[dict[str, Any]]:
         kwargs: dict[str, Any] = {
             "model": self.model,
             "messages": messages,
             "stream": True,
         }
+        if temperature is not None:
+            kwargs["temperature"] = temperature
+        if top_p is not None:
+            kwargs["top_p"] = top_p
+        if max_tokens is not None:
+            kwargs["max_tokens"] = max_tokens
         if tools:
             kwargs["tools"] = tools
             kwargs["tool_choice"] = "auto"

@@ -1,6 +1,23 @@
 # FinanceBench 30 题 RAG 测评操作与读数指南
 
-这份文档用于反复执行 NewAgent 的端到端 RAG 测评。评测不是只测一个检索函数，而是走真实链路：登录评测账号 → 创建会话 → 调用聊天接口 → 检索个人知识库 → 生成答案和引用 → 校验来源 → DeepEval 使用裁判模型评分。
+这份文档用于反复执行 NewAgent 的端到端 RAG 测评。评测不是只测一个检索函数，而是走真实链路：登录评测账号 → 创建会话 → 调用聊天接口 → 检索个人知识库 → 生成答案和引用 → 校验来源 → 本地确定性指标与 DeepEval 裁判指标分别评分。
+
+从 2026-07-31 起，评测口径按阶段拆分：
+
+```text
+检索是否找到证据
+→ Gold Evidence Recall / Reciprocal Rank（本地确定性计算）
+
+计算题答案是否正确
+→ Numeric Answer Correctness（本地数值、方向、容差校验）
+
+回答是否幻觉、是否切题
+→ Faithfulness / Answer Relevancy（DeepEval LLM 裁判）
+```
+
+不再使用 LLM Contextual Recall 判断派生财务数值是否能从原始表格直接推出。该
+指标容易把“已经召回原始数据，但需要除法、差值或特定公式”的情况误判为召回
+失败。
 
 当前数据来自 FinanceBench `OPEN_SOURCE` 人工标注：5 份 PDF、30 个问题，其中开发集 18 题、保留测试集 12 题。标准答案不是本项目自动生成的。
 
@@ -9,7 +26,10 @@
 | 文件 | 用途 |
 |---|---|
 | `backend/evals/test_rag.py` | 端到端测评入口 |
+| `backend/evals/evaluation_scoring.py` | 黄金证据、MRR 与数值答案的纯本地评分逻辑 |
+| `backend/evals/deepeval_metrics.py` | 把本地确定性指标接入 DeepEval 报告 |
 | `backend/evals/summarize_results.py` | 将 DeepEval JSON 转成中文 Markdown 报告 |
+| `backend/evals/datasets/financebench_eval_overrides.json` | 少数公式或舍入口径需要明确声明时的人工标注 |
 | `backend/evals/datasets/financebench_goldens_dev.json` | 18 题开发集，只用于调参 |
 | `backend/evals/datasets/financebench_goldens_test.json` | 12 题保留测试集，用于最终验收 |
 | `backend/evals/datasets/financebench_goldens_30.json` | 30 题合集，用于完整报告 |
@@ -102,7 +122,9 @@ PowerShell 中临时设置的 `$env:...` 优先于 `.env`，适合只改变本�
 
 ### 5.1 最快冒烟：5 题、2 个核心指标
 
-用于确认接口、文档、API 和基本召回是否正常。`fast` 只测 Contextual Recall 与 Faithfulness，并关闭文字理由，调用量约为完整四指标的一半。
+用于确认接口、文档、API 和基本召回是否正常。`fast` 测黄金证据召回、计算题数值
+正确性和 Faithfulness。前两个指标完全本地运行，只有 Faithfulness 调用裁判
+模型。
 
 ```powershell
 cd <项目根目录>\backend
@@ -156,16 +178,41 @@ $env:EVAL_DATASET_PATH='backend/evals/datasets/financebench_goldens_30.json'
 1. 接口必须返回至少一条 `citation`；没有引用直接失败。
 2. 返回引用的文件名必须命中该题的 `acceptable_sources`；召回错 PDF 直接失败。
 
-通过硬校验后，四个 LLM-as-a-Judge 指标如下：
+通过硬校验后，指标分为确定性指标和 LLM 裁判指标：
 
 | 指标 | 使用的数据 | 阈值 | 它回答的问题 | 低分通常说明 |
 |---|---|---:|---|---|
-| Contextual Precision | 问题、标准答案、按顺序排列的检索片段 | 0.70 | 相关片段是否排在检索列表前面 | Top-K 混入噪声、重排差、同文档重复片段占位 |
-| Contextual Recall | 标准答案、检索片段 | 0.70 | 标准答案需要的事实是否被召回 | 正确表格/段落没找到、切分破坏语义、Top-K 太小 |
+| Gold Evidence Recall | 数据集标注原文、检索片段 | 1.00 | 标注证据是否全部进入 Top-K | 解析丢失、召回不足、Top-K 太小 |
+| Gold Evidence Reciprocal Rank | 数据集标注原文、检索顺序 | 默认首次命中 Top-3 | 黄金证据第一次出现得够不够早 | 重排差、重复片段占位、候选噪声 |
+| Numeric Answer Correctness | 实际答案、声明的数值/方向/容差 | 1.00 | 计算结果和变化方向是否正确 | 公式选择错误、算术错误、舍入口径不符 |
 | Faithfulness | 实际答案、检索片段 | 0.80 | 答案中的陈述能否由证据支持 | 模型幻觉、跨片段错误拼接、计算过程用了证据外信息 |
 | Answer Relevancy | 问题、实际答案 | 0.70 | 回答是否正面回应问题 | 答非所问、内容冗余、拒答或只复述背景 |
 
-注意：这些分数不是“最终答案正确率”。例如答案可能忠于检索到的错误/不完整片段，因此 Faithfulness 很高，但财务数值仍算错。FinanceBench 有计算题，正式完善时还应增加数值容差或基于标准答案的 Correctness/GEval 指标。
+黄金证据匹配使用连续三个词项的有序片段覆盖率，默认覆盖率达到 `0.60` 才算
+命中。它不调用模型，因此同一输入会得到确定结果。MRR 的单题分数是
+`1 / 首次命中排名`，例如首次命中第 3 名为 `0.333`。
+
+计算题在数据集的 `evaluation.numeric_answer` 中声明：
+
+```json
+{
+  "expected_values": [0.67, 0.69],
+  "absolute_tolerance": 0.02,
+  "relative_tolerance": 0.01,
+  "direction": "improved"
+}
+```
+
+程序忽略 FY2022 这类四位年份，直接比较回答中的数值。允许误差取“绝对容差”和
+“相对容差”中较大者；期望值和方向必须全部满足才通过。普通数值题会根据
+FinanceBench 标准答案生成默认断言；公式定义或舍入方式存在歧义的题，通过
+`financebench_eval_overrides.json` 显式覆盖。
+
+例如 Quick ratio 明确采用 FinanceBench 的
+`(current assets - inventory) / current liabilities` 定义，所以回答
+`0.53 → 0.57` 会显示为“证据召回通过、数值正确性失败”，不会再显示为
+“Contextual Recall 失败”。Gross margin 则校验 `19.4% → 18.5%` 和下降方向，
+不强制文档原文出现计算后的“下降 0.8 个百分点”。
 
 评测请求会设置 `include_retrieval_context=true`，接口因此只在本次响应中返回回答模型实际使用的完整 `retrieval_context`。它不会写入聊天历史；普通前端请求仍只保存和返回最多 1000 字的 `citations[].excerpt`。如果后端尚未重启、没有返回完整字段，评测脚本会兼容性回退到 `excerpt`，但这种结果可能低估 Contextual Recall，不能作为新的正式基线。
 
@@ -173,10 +220,10 @@ $env:EVAL_DATASET_PATH='backend/evals/datasets/financebench_goldens_30.json'
 
 | 档位 | 指标 | 适用场景 |
 |---|---|---|
-| `fast` | Recall + Faithfulness | 高频开发反馈，先判断“有没有找全、有没有胡编” |
-| `retrieval` | Precision + Recall | 专门调分块、召回、Top-K、重排 |
-| `generation` | Faithfulness + Answer Relevancy | 专门调提示词和回答模型 |
-| `full` | 全部四项 | 正式、可比较的完整报告 |
+| `fast` | Gold Recall + 数值正确性（若适用）+ Faithfulness | 高频开发反馈，区分召回、计算和幻觉 |
+| `retrieval` | Gold Recall + Gold Reciprocal Rank | 纯本地调分块、召回、Top-K、重排，不调用裁判模型 |
+| `generation` | 数值正确性（若适用）+ Faithfulness + Answer Relevancy | 调公式、提示词和回答模型 |
+| `full` | 全部确定性指标 + 两个生成指标 | 正式、可比较的完整报告 |
 
 “一条用例通过”表示来源硬校验和本档位内所有指标都达到阈值。整体通过数通常很严格，不能只看它；还要看各指标均值、通过数和具体失败理由。
 
@@ -198,19 +245,21 @@ $env:EVAL_DATASET_PATH='backend/evals/datasets/financebench_goldens_30.json'
 
 1. 看“用例数量”是否符合预期，避免误把 5 题冒烟当成完整报告。
 2. 看“无分数”是否为 0；非 0 代表裁判超时/取消，不能当成模型质量分。
-3. 先看 Recall，再看 Precision：先解决“没找全”，再优化“相关片段是否靠前”。
-4. 再看 Faithfulness 和 Answer Relevancy，判断生成阶段是否幻觉或跑题。
-5. 打开失败用例，对照问题、标准答案、实际答案和检索片段，进行人工复核。
+3. 先看 Gold Evidence Recall，再看 Reciprocal Rank：先解决“没找到”，再解决“排序靠后”。
+4. 计算题查看 Numeric Answer Correctness，判断公式、数值和方向。
+5. 再看 Faithfulness 和 Answer Relevancy，判断生成阶段是否幻觉或跑题。
+6. 打开失败用例，对照问题、标准答案、实际答案和检索片段，进行人工复核。
 
 常见组合判断：
 
 | 现象 | 更可能的问题 | 优先检查 |
 |---|---|---|
-| Recall 低，Faithfulness 高 | 模型只根据有限证据作答，没有胡编，但关键证据没召回 | PDF 表格解析、分块、查询改写、Top-K |
-| Recall 高，Precision 低 | 找到了答案，但前面有很多无关或重复片段 | 重排、阈值、MMR/去重、单文档配额 |
-| 检索两项高，Faithfulness 低 | 证据够，但生成模型使用错误 | 提示词、引用约束、计算步骤、模型能力 |
+| Gold Recall 低，Faithfulness 高 | 模型只根据有限证据作答，没有胡编，但标注证据没召回 | PDF 表格解析、分块、查询改写、Top-K |
+| Gold Recall 高，Reciprocal Rank 低 | 找到了答案，但黄金证据排序靠后 | 重排、阈值、MMR/去重、单页配额 |
+| 检索通过，Numeric Correctness 低 | 原始数据已找到，但答案公式或数值错误 | 公式定义、计算工具、数值容差和舍入 |
+| 检索两项高，Faithfulness 低 | 证据够，但生成模型使用错误或添加了无依据内容 | 提示词、引用约束、计算步骤、模型能力 |
 | Faithfulness 高，Relevancy 低 | 内容有依据，但没有直接回答 | 回答模板、减少冗余、明确输出格式 |
-| 四项高但数值答案错 | 现有指标没有充分检查计算正确性 | 增加数值正确率/容差指标和人工抽查 |
+| 数值正确性高但人工判断仍不合理 | 数值出现但年份或业务含义关联错误 | 增加带标签的字段断言并人工抽查 |
 
 不同模型裁判、不同阈值或不同题集的分数不能直接横向比较。LLM 裁判也会波动；正式对外报告应固定裁判模型、温度、题集和配置，最好重复 3 次并报告均值与波动。
 

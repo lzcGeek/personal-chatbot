@@ -13,12 +13,16 @@ from dotenv import load_dotenv
 from deepeval import assert_test
 from deepeval.metrics import (
     AnswerRelevancyMetric,
-    ContextualPrecisionMetric,
-    ContextualRecallMetric,
     FaithfulnessMetric,
 )
 from deepeval.models import GPTModel
 from deepeval.test_case import LLMTestCase
+
+from evals.deepeval_metrics import (
+    GoldEvidenceRecallMetric,
+    GoldEvidenceReciprocalRankMetric,
+    NumericAnswerCorrectnessMetric,
+)
 
 
 EVALS_DIR = Path(__file__).resolve().parent
@@ -87,7 +91,7 @@ JUDGE_MODEL = GPTModel(
 )
 
 
-def build_metrics():
+def build_metrics(golden: dict[str, Any]):
     """Create fresh metric instances for each test case.
 
     ``fast`` is intended for frequent development feedback. ``full`` is the
@@ -96,12 +100,17 @@ def build_metrics():
     """
     profile = os.getenv("EVAL_METRIC_PROFILE", "full").strip().lower()
     profiles = {
-        "fast": ("contextual_recall", "faithfulness"),
-        "retrieval": ("contextual_precision", "contextual_recall"),
-        "generation": ("faithfulness", "answer_relevancy"),
+        "fast": ("gold_recall", "numeric_correctness", "faithfulness"),
+        "retrieval": ("gold_recall", "gold_reciprocal_rank"),
+        "generation": (
+            "numeric_correctness",
+            "faithfulness",
+            "answer_relevancy",
+        ),
         "full": (
-            "contextual_precision",
-            "contextual_recall",
+            "gold_recall",
+            "gold_reciprocal_rank",
+            "numeric_correctness",
             "faithfulness",
             "answer_relevancy",
         ),
@@ -117,12 +126,23 @@ def build_metrics():
         if not include_reason_raw
         else include_reason_raw.lower() in {"1", "true", "yes", "on"}
     )
+    evaluation = dict(golden.get("evaluation") or {})
+    gold_evidence = list(golden.get("metadata", {}).get("gold_evidence") or [])
+    match_threshold = float(evaluation.get("gold_match_threshold", 0.6))
     factories = {
-        "contextual_precision": lambda: ContextualPrecisionMetric(
-            threshold=0.7, model=JUDGE_MODEL, include_reason=include_reason
+        "gold_recall": lambda: GoldEvidenceRecallMetric(
+            gold_evidence,
+            match_threshold=match_threshold,
         ),
-        "contextual_recall": lambda: ContextualRecallMetric(
-            threshold=0.7, model=JUDGE_MODEL, include_reason=include_reason
+        "gold_reciprocal_rank": lambda: GoldEvidenceReciprocalRankMetric(
+            gold_evidence,
+            match_threshold=match_threshold,
+            rank_pass_k=int(evaluation.get("rank_pass_k", 3)),
+        ),
+        "numeric_correctness": lambda: (
+            NumericAnswerCorrectnessMetric(evaluation["numeric_answer"])
+            if evaluation.get("numeric_answer")
+            else None
         ),
         "faithfulness": lambda: FaithfulnessMetric(
             threshold=0.8, model=JUDGE_MODEL, include_reason=include_reason
@@ -131,7 +151,11 @@ def build_metrics():
             threshold=0.7, model=JUDGE_MODEL, include_reason=include_reason
         ),
     }
-    return [factories[name]() for name in profiles[profile]]
+    return [
+        metric
+        for name in profiles[profile]
+        if (metric := factories[name]()) is not None
+    ]
 
 
 class NewAgentEvalClient:
@@ -272,4 +296,4 @@ def test_rag_quality(
         expected_output=golden["expected_output"],
         retrieval_context=retrieval_context,
     )
-    assert_test(test_case, build_metrics())
+    assert_test(test_case, build_metrics(golden))

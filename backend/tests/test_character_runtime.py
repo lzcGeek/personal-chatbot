@@ -157,23 +157,86 @@ async def test_character_lookup_is_scoped_by_owner_and_soft_delete(monkeypatch) 
 
 
 class CharacterStreamLlm:
-    async def stream(self, messages, tools):
+    def __init__(self) -> None:
+        self.generation_options = {}
+
+    async def stream(self, messages, tools, **generation_options):
+        self.generation_options = generation_options
         yield {"type": "token", "content": "halt"}
         yield {"type": "turn", "turn": LlmTurn(content="halt")}
 
 
+class CharacterCompleteLlm:
+    def __init__(self) -> None:
+        self.calls = []
+
+    async def complete(self, messages, tools, **generation_options):
+        self.calls.append(generation_options)
+        return LlmTurn(content="done")
+
+
+def test_character_generation_options_are_scoped_and_default_temperature() -> None:
+    configured = SimpleNamespace(
+        generation_settings={
+            "temperature": 1.1,
+            "top_p": 0.85,
+            "max_tokens": 512,
+        }
+    )
+    unconfigured = SimpleNamespace(generation_settings={})
+
+    assert ChatService._character_generation_options(None) == {}  # noqa: SLF001
+    assert ChatService._character_generation_options(unconfigured) == {  # noqa: SLF001
+        "temperature": 0.7
+    }
+    assert ChatService._character_generation_options(configured) == {  # noqa: SLF001
+        "temperature": 1.1,
+        "top_p": 0.85,
+        "max_tokens": 512,
+    }
+
+
 @pytest.mark.asyncio
-async def test_single_character_stream_attributes_tokens_and_persisted_message(monkeypatch) -> None:
+async def test_non_stream_character_generation_does_not_affect_assistant() -> None:
+    llm = CharacterCompleteLlm()
     service = ChatService(
         session_factory=None,  # type: ignore[arg-type]
-        llm_client=CharacterStreamLlm(),  # type: ignore[arg-type]
+        llm_client=llm,  # type: ignore[arg-type]
+        context_builder=None,  # type: ignore[arg-type]
+        mcp_manager=None,  # type: ignore[arg-type]
+        memory_service=None,  # type: ignore[arg-type]
+        max_tool_rounds=1,
+    )
+    speaker = SimpleNamespace(
+        generation_settings={"temperature": 1.2, "top_p": 0.8, "max_tokens": 300}
+    )
+
+    await service._execute_speaker([], [], uuid.uuid4(), False, [], speaker)  # noqa: SLF001
+    await service._execute_speaker([], [], uuid.uuid4(), False, [], None)  # noqa: SLF001
+
+    assert llm.calls == [
+        {"temperature": 1.2, "top_p": 0.8, "max_tokens": 300},
+        {},
+    ]
+
+
+@pytest.mark.asyncio
+async def test_single_character_stream_attributes_tokens_and_persisted_message(monkeypatch) -> None:
+    llm = CharacterStreamLlm()
+    service = ChatService(
+        session_factory=None,  # type: ignore[arg-type]
+        llm_client=llm,  # type: ignore[arg-type]
         context_builder=None,  # type: ignore[arg-type]
         mcp_manager=None,  # type: ignore[arg-type]
         memory_service=None,  # type: ignore[arg-type]
         max_tool_rounds=1,
     )
     user_message = SimpleNamespace(id=1, content="hello")
-    speaker = SimpleNamespace(id=uuid.uuid4(), name="Guard")
+    speaker = SimpleNamespace(
+        id=uuid.uuid4(),
+        name="Guard",
+        generation_settings={"temperature": 0.4, "top_p": 0.9, "max_tokens": 256},
+    )
 
     async def fake_build(*args, **kwargs):
         return user_message, [], [], [], [], None, speaker, False
@@ -198,6 +261,11 @@ async def test_single_character_stream_attributes_tokens_and_persisted_message(m
     ]
     assert events[1]["character_id"] == str(speaker.id)
     assert events[-1]["message"]["speaker_name"] == "Guard"
+    assert llm.generation_options == {
+        "temperature": 0.4,
+        "top_p": 0.9,
+        "max_tokens": 256,
+    }
 
 
 class DenyToolManager:

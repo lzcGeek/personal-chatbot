@@ -114,7 +114,12 @@ class ChatService:
                 if replay is not None:
                     return replay
                 turn = await self._execute_speaker(
-                    messages, tools, user_id, effective_network, degradations
+                    messages,
+                    tools,
+                    user_id,
+                    effective_network,
+                    degradations,
+                    speaker,
                 )
                 assistant = await self._save_response(
                     turn.content, "complete", conversation_id, citations, speaker
@@ -476,7 +481,12 @@ class ChatService:
                     )
                 )
                 turn = await self._execute_speaker(
-                    messages, tools, user_id, effective_network, degradations
+                    messages,
+                    tools,
+                    user_id,
+                    effective_network,
+                    degradations,
+                    speaker,
                 )
                 response = await self._save_group_response(
                     turn.content, conversation_id, citations, speaker, plan.id, index
@@ -545,7 +555,12 @@ class ChatService:
                         )
                     )
                     turn = await self._execute_speaker(
-                        messages, tools, user_id, effective_network, degradations
+                        messages,
+                        tools,
+                        user_id,
+                        effective_network,
+                        degradations,
+                        speaker,
                     )
                     yield {
                         "type": "token",
@@ -651,9 +666,12 @@ class ChatService:
                     "speaker_name": speaker.name,
                 }
 
+            generation_options = self._character_generation_options(speaker)
             for _ in range(self.max_tool_rounds):
                 turn: LlmTurn | None = None
-                async for event in self.llm_client.stream(messages, tools):
+                async for event in self.llm_client.stream(
+                    messages, tools, **generation_options
+                ):
                     if event["type"] == "token":
                         accumulated += event["content"]
                         token_event = dict(event)
@@ -720,7 +738,9 @@ class ChatService:
                     ),
                 }
             )
-            final_turn = await self.llm_client.complete(messages, tools=None)
+            final_turn = await self.llm_client.complete(
+                messages, tools=None, **generation_options
+            )
             if final_turn.content:
                 accumulated += final_turn.content
                 token_event = {"type": "token", "content": final_turn.content}
@@ -792,10 +812,14 @@ class ChatService:
         user_id: uuid.UUID,
         allow_network: bool,
         degradations: list[str],
+        speaker: Character | None = None,
     ) -> LlmTurn:
         allowed_tool_names = self._allowed_tool_names(tools)
+        generation_options = self._character_generation_options(speaker)
         for _ in range(self.max_tool_rounds):
-            turn = await self.llm_client.complete(messages, tools)
+            turn = await self.llm_client.complete(
+                messages, tools, **generation_options
+            )
             if not turn.tool_calls:
                 return turn
             messages.append(self._assistant_tool_message(turn))
@@ -818,7 +842,26 @@ class ChatService:
                 ),
             }
         )
-        return await self.llm_client.complete(messages, tools=None)
+        return await self.llm_client.complete(
+            messages, tools=None, **generation_options
+        )
+
+    @staticmethod
+    def _character_generation_options(
+        speaker: Character | None,
+    ) -> dict[str, float | int]:
+        """Return model parameters for an active character only."""
+        if speaker is None:
+            return {}
+        settings = getattr(speaker, "generation_settings", None) or {}
+        options: dict[str, float | int] = {
+            "temperature": float(settings.get("temperature", 0.7))
+        }
+        if settings.get("top_p") is not None:
+            options["top_p"] = float(settings["top_p"])
+        if settings.get("max_tokens") is not None:
+            options["max_tokens"] = int(settings["max_tokens"])
+        return options
 
     async def _run_tool_loop(
         self,

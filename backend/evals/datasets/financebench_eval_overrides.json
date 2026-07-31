@@ -1,0 +1,36 @@
+{
+  "financebench_id_00799": {
+    "evaluation": {
+      "task_type": "calculation",
+      "gold_match_threshold": 0.6,
+      "rank_pass_k": 3,
+      "numeric_answer": {
+        "expected_values": [
+          0.67,
+          0.69
+        ],
+        "absolute_tolerance": 0.02,
+        "relative_tolerance": 0.01,
+        "direction": "improved",
+        "note": "FinanceBench defines quick ratio as (current assets - inventory) / current liabilities for this case."
+      }
+    }
+  },
+  "financebench_id_00684": {
+    "evaluation": {
+      "task_type": "calculation",
+      "gold_match_threshold": 0.6,
+      "rank_pass_k": 3,
+      "numeric_answer": {
+        "expected_values": [
+          18.5,
+          19.4
+        ],
+        "absolute_tolerance": 0.05,
+        "relative_tolerance": 0.01,
+        "direction": "declined",
+        "note": "Check the two reported gross-margin percentages and direction; do not require the rounded 0.8 percentage-point delta to appear verbatim."
+      }
+    }
+  }
+}

@@ -6,6 +6,19 @@
     "acceptable_sources": [
       "AMD_2022_10K.pdf"
     ],
+    "evaluation": {
+      "task_type": "calculation",
+      "gold_match_threshold": 0.6,
+      "rank_pass_k": 3,
+      "numeric_answer": {
+        "expected_values": [
+          1.57
+        ],
+        "absolute_tolerance": 0.05,
+        "relative_tolerance": 0.01,
+        "direction": null
+      }
+    },
     "metadata": {
       "benchmark": "FinanceBench OPEN_SOURCE",
       "split": "test",
@@ -31,6 +44,11 @@
     "acceptable_sources": [
       "AMD_2022_10K.pdf"
     ],
+    "evaluation": {
+      "task_type": "direct",
+      "gold_match_threshold": 0.6,
+      "rank_pass_k": 3
+    },
     "metadata": {
       "benchmark": "FinanceBench OPEN_SOURCE",
       "split": "test",
@@ -56,6 +74,11 @@
     "acceptable_sources": [
       "AMD_2022_10K.pdf"
     ],
+    "evaluation": {
+      "task_type": "direct",
+      "gold_match_threshold": 0.6,
+      "rank_pass_k": 3
+    },
     "metadata": {
       "benchmark": "FinanceBench OPEN_SOURCE",
       "split": "test",
@@ -81,6 +104,17 @@
     "acceptable_sources": [
       "AMD_2022_10K.pdf"
     ],
+    "evaluation": {
+      "task_type": "calculation",
+      "gold_match_threshold": 0.6,
+      "rank_pass_k": 3,
+      "numeric_answer": {
+        "expected_values": [],
+        "absolute_tolerance": 0.05,
+        "relative_tolerance": 0.01,
+        "direction": "declined"
+      }
+    },
     "metadata": {
       "benchmark": "FinanceBench OPEN_SOURCE",
       "split": "test",
@@ -106,6 +140,11 @@
     "acceptable_sources": [
       "AMD_2022_10K.pdf"
     ],
+    "evaluation": {
+      "task_type": "calculation",
+      "gold_match_threshold": 0.6,
+      "rank_pass_k": 3
+    },
     "metadata": {
       "benchmark": "FinanceBench OPEN_SOURCE",
       "split": "test",
@@ -131,6 +170,11 @@
     "acceptable_sources": [
       "AMD_2022_10K.pdf"
     ],
+    "evaluation": {
+      "task_type": "direct",
+      "gold_match_threshold": 0.6,
+      "rank_pass_k": 3
+    },
     "metadata": {
       "benchmark": "FinanceBench OPEN_SOURCE",
       "split": "test",
@@ -156,6 +200,11 @@
     "acceptable_sources": [
       "AMD_2022_10K.pdf"
     ],
+    "evaluation": {
+      "task_type": "direct",
+      "gold_match_threshold": 0.6,
+      "rank_pass_k": 3
+    },
     "metadata": {
       "benchmark": "FinanceBench OPEN_SOURCE",
       "split": "test",
@@ -181,6 +230,11 @@
     "acceptable_sources": [
       "PEPSICO_2022_10K.pdf"
     ],
+    "evaluation": {
+      "task_type": "direct",
+      "gold_match_threshold": 0.6,
+      "rank_pass_k": 3
+    },
     "metadata": {
       "benchmark": "FinanceBench OPEN_SOURCE",
       "split": "test",
@@ -211,6 +265,11 @@
     "acceptable_sources": [
       "PEPSICO_2022_10K.pdf"
     ],
+    "evaluation": {
+      "task_type": "direct",
+      "gold_match_threshold": 0.6,
+      "rank_pass_k": 3
+    },
     "metadata": {
       "benchmark": "FinanceBench OPEN_SOURCE",
       "split": "test",
@@ -236,6 +295,11 @@
     "acceptable_sources": [
       "PEPSICO_2022_10K.pdf"
     ],
+    "evaluation": {
+      "task_type": "direct",
+      "gold_match_threshold": 0.6,
+      "rank_pass_k": 3
+    },
     "metadata": {
       "benchmark": "FinanceBench OPEN_SOURCE",
       "split": "test",
@@ -261,6 +325,19 @@
     "acceptable_sources": [
       "PEPSICO_2022_10K.pdf"
     ],
+    "evaluation": {
+      "task_type": "calculation",
+      "gold_match_threshold": 0.6,
+      "rank_pass_k": 3,
+      "numeric_answer": {
+        "expected_values": [
+          9068.0
+        ],
+        "absolute_tolerance": 0.05,
+        "relative_tolerance": 0.01,
+        "direction": null
+      }
+    },
     "metadata": {
       "benchmark": "FinanceBench OPEN_SOURCE",
       "split": "test",
@@ -291,6 +368,19 @@
     "acceptable_sources": [
       "PEPSICO_2022_10K.pdf"
     ],
+    "evaluation": {
+      "task_type": "calculation",
+      "gold_match_threshold": 0.6,
+      "rank_pass_k": 3,
+      "numeric_answer": {
+        "expected_values": [
+          16.5
+        ],
+        "absolute_tolerance": 0.05,
+        "relative_tolerance": 0.01,
+        "direction": null
+      }
+    },
     "metadata": {
       "benchmark": "FinanceBench OPEN_SOURCE",
       "split": "test",

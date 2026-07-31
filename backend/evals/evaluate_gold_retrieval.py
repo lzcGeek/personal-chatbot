@@ -6,7 +6,6 @@ import argparse
 import asyncio
 import json
 import os
-import re
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -21,10 +20,13 @@ BACKEND_DIR = EVALS_DIR.parent
 PROJECT_ROOT = BACKEND_DIR.parent
 DEFAULT_DATASET = EVALS_DIR / "datasets" / "rag_goldens.json"
 DEFAULT_OUTPUT_DIR = EVALS_DIR / "results"
-_TOKEN_PATTERN = re.compile(r"[a-z0-9]+|[\u3400-\u9fff]", re.IGNORECASE)
 
 if str(BACKEND_DIR) not in sys.path:
     sys.path.insert(0, str(BACKEND_DIR))
+
+from evals.evaluation_scoring import gold_evidence_coverage
+
+
 load_dotenv(PROJECT_ROOT / ".env")
 
 
@@ -77,29 +79,6 @@ def load_goldens(path: Path, limit: int) -> list[dict[str, Any]]:
                 f"Dataset case {index} ({item.get('id', '-')}) has no metadata.gold_evidence"
             )
     return selected
-
-
-def normalized_tokens(value: str) -> list[str]:
-    return _TOKEN_PATTERN.findall(value.casefold())
-
-
-def token_shingles(value: str, size: int = 3) -> set[tuple[str, ...]]:
-    tokens = normalized_tokens(value)
-    if len(tokens) < size:
-        return {(token,) for token in tokens}
-    return {
-        tuple(tokens[index : index + size])
-        for index in range(len(tokens) - size + 1)
-    }
-
-
-def gold_evidence_coverage(gold_excerpt: str, retrieved_context: str) -> float:
-    """Return the fraction of ordered gold token shingles present in a context."""
-    gold = token_shingles(gold_excerpt)
-    if not gold:
-        return 0.0
-    retrieved = token_shingles(retrieved_context)
-    return len(gold & retrieved) / len(gold)
 
 
 def evaluate_case(
