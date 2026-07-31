@@ -1,6 +1,8 @@
-"""Convert DeepEval's latest internal JSON into a readable Markdown report."""
+"""Convert a DeepEval internal JSON result into a readable Markdown report."""
 
+import argparse
 import json
+from collections import OrderedDict
 from datetime import datetime
 from pathlib import Path
 from statistics import mean
@@ -8,8 +10,8 @@ from typing import Any
 
 
 BACKEND_DIR = Path(__file__).resolve().parents[1]
-SOURCE_PATH = BACKEND_DIR / ".deepeval" / ".latest_run_full.json"
-OUTPUT_PATH = BACKEND_DIR / "evals" / "results" / "rag-eval-latest.md"
+DEFAULT_SOURCE_PATH = BACKEND_DIR / ".deepeval" / ".latest_run_full.json"
+DEFAULT_OUTPUT_DIR = BACKEND_DIR / "evals" / "results"
 
 
 def cell(value: Any) -> str:
@@ -23,17 +25,111 @@ def score(value: Any) -> str:
         return "-"
 
 
+def timestamped_output_path(created_at: datetime) -> Path:
+    """Return a new default report path without overwriting an earlier report."""
+    base = DEFAULT_OUTPUT_DIR / f"rag-eval-{created_at:%Y%m%d-%H%M%S}.md"
+    if not base.exists():
+        return base
+
+    counter = 2
+    while True:
+        candidate = base.with_stem(f"{base.stem}-{counter}")
+        if not candidate.exists():
+            return candidate
+        counter += 1
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--source", type=Path, default=DEFAULT_SOURCE_PATH)
+    parser.add_argument(
+        "--output",
+        type=Path,
+        default=None,
+        help=(
+            "Report path. By default, write a unique timestamped file under "
+            "evals/results so previous reports are preserved."
+        ),
+    )
+    parser.add_argument(
+        "--deduplicate",
+        action="store_true",
+        help="Keep the last record for each input (useful after an interrupted run).",
+    )
+    return parser.parse_args()
+
+
 def main() -> None:
-    if not SOURCE_PATH.exists():
+    args = parse_args()
+    source_path = args.source
+    if not source_path.is_absolute():
+        source_path = (BACKEND_DIR / source_path).resolve()
+    report_created_at = datetime.now().astimezone()
+    if args.output is None:
+        output_path = timestamped_output_path(report_created_at)
+    else:
+        output_path = args.output
+        if not output_path.is_absolute():
+            output_path = (BACKEND_DIR / output_path).resolve()
+
+    if not source_path.exists():
         raise SystemExit(
-            f"DeepEval result not found: {SOURCE_PATH}\n"
+            f"DeepEval result not found: {source_path}\n"
             "Run `deepeval test run evals/test_rag.py -v` first."
         )
 
-    data = json.loads(SOURCE_PATH.read_text(encoding="utf-8"))
+    data = json.loads(source_path.read_text(encoding="utf-8"))
     cases = data.get("testCases") or []
+    if args.deduplicate:
+        latest_by_input: OrderedDict[str, dict[str, Any]] = OrderedDict()
+        for case_data in cases:
+            case_input = str(case_data.get("input", ""))
+            latest_by_input.pop(case_input, None)
+            latest_by_input[case_input] = case_data
+        cases = list(latest_by_input.values())
     metrics_scores = data.get("metricsScores") or []
-    generated_at = datetime.fromtimestamp(SOURCE_PATH.stat().st_mtime).astimezone()
+    generated_at = datetime.fromtimestamp(source_path.stat().st_mtime).astimezone()
+
+    if not metrics_scores:
+        aggregate: OrderedDict[str, dict[str, Any]] = OrderedDict()
+        for case_data in cases:
+            for metric in case_data.get("metricsData") or []:
+                name = str(metric.get("name", "-"))
+                item = aggregate.setdefault(
+                    name,
+                    {
+                        "metric": name,
+                        "scores": [],
+                        "passes": 0,
+                        "fails": 0,
+                        "unavailable": 0,
+                    },
+                )
+                value = metric.get("score")
+                if isinstance(value, (int, float)):
+                    item["scores"].append(float(value))
+                    if metric.get("success"):
+                        item["passes"] += 1
+                    else:
+                        item["fails"] += 1
+                else:
+                    item["unavailable"] += 1
+        metrics_scores = list(aggregate.values())
+    else:
+        unavailable_by_metric: dict[str, int] = {}
+        for case_data in cases:
+            for metric in case_data.get("metricsData") or []:
+                if not isinstance(metric.get("score"), (int, float)):
+                    name = str(metric.get("name", "-"))
+                    unavailable_by_metric[name] = unavailable_by_metric.get(name, 0) + 1
+        for item in metrics_scores:
+            item["unavailable"] = max(
+                int(item.get("errors") or 0),
+                unavailable_by_metric.get(str(item.get("metric", "-")), 0),
+            )
+
+    passed = sum(bool(case_data.get("success")) for case_data in cases)
+    failed = len(cases) - passed
 
     lines = [
         "# NewAgent RAG DeepEval 报告",
@@ -41,21 +137,27 @@ def main() -> None:
         f"- 生成时间：{generated_at:%Y-%m-%d %H:%M:%S %z}",
         f"- 测试文件：`{data.get('testFile', '-')}`",
         f"- 用例数量：{len(cases)}",
-        f"- 整体通过：{data.get('testPassed', 0)}",
-        f"- 整体失败：{data.get('testFailed', 0)}",
-        f"- 总耗时：{float(data.get('runDuration') or 0):.2f} 秒",
+        f"- 整体通过：{passed}",
+        f"- 整体失败：{failed}",
+        (
+            f"- 总耗时：{float(data['runDuration']):.2f} 秒"
+            if data.get("runDuration")
+            else "- 总耗时：未记录"
+        ),
         "",
         "## 指标汇总",
         "",
-        "| 指标 | 平均分 | 通过 | 失败 |",
-        "|---|---:|---:|---:|",
+        "| 指标 | 平均分 | 通过 | 失败 | 无分数 |",
+        "|---|---:|---:|---:|---:|",
     ]
 
     for item in metrics_scores:
         scores = [float(value) for value in item.get("scores") or []]
+        average = f"{mean(scores):.3f}" if scores else "-"
         lines.append(
             f"| {cell(item.get('metric', '-'))} | "
-            f"{mean(scores):.3f} | {item.get('passes', 0)} | {item.get('fails', 0)} |"
+            f"{average} | {item.get('passes', 0)} | {item.get('fails', 0)} | "
+            f"{item.get('unavailable', 0)} |"
         )
 
     metric_names: list[str] = []
@@ -102,6 +204,8 @@ def main() -> None:
                 f"{score(metric.get('score'))} / 阈值 {score(metric.get('threshold'))}"
             )
             reason = str(metric.get("reason") or "未提供原因").strip()
+            if metric.get("error"):
+                reason = f"裁判执行异常：{metric['error']}"
             failed_details.append(f"  - {reason}")
 
     lines.extend(["", "## 失败原因", *failed_details])
@@ -111,17 +215,17 @@ def main() -> None:
             "## 阅读说明",
             "",
             "- Contextual Precision 低：召回列表前部混入无关片段，通常需要改进 Top-K、阈值或重排。",
-            "- Contextual Recall 低：召回证据不足以覆盖标准答案。当前测试使用 `citations[].excerpt`，该字段最多保留 300 字，可能低估完整上下文召回率。",
+            "- Contextual Recall 低：召回证据不足以覆盖标准答案。新版评测优先使用回答模型实际收到的完整 `retrieval_context`；仅在连接未重启的旧后端时回退到引用摘要。",
             "- Faithfulness 低：最终回答包含检索证据无法支持的内容，可能存在幻觉。",
             "- Answer Relevancy 低：最终回答没有直接回应问题或混入无关内容。",
             "",
-            f"原始数据：`{SOURCE_PATH}`",
+            f"原始数据：`{source_path}`",
         ]
     )
 
-    OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    OUTPUT_PATH.write_text("\n".join(lines) + "\n", encoding="utf-8")
-    print(f"Report written to: {OUTPUT_PATH}")
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    print(f"Report written to: {output_path}")
 
 
 if __name__ == "__main__":

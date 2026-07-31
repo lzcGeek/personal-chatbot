@@ -26,7 +26,7 @@
 ### 终端 1：启动三个数据库
 
 ```powershell
-cd D:\ruijie\agent\newagent
+cd <项目根目录>
 docker compose up -d postgres qdrant neo4j
 docker compose ps
 ```
@@ -42,7 +42,7 @@ docker compose ps
 ### 终端 2：升级数据库表并启动后端
 
 ```powershell
-cd D:\ruijie\agent\newagent\backend
+cd <项目根目录>\backend
 .\.venv\Scripts\python.exe -m alembic upgrade head
 .\.venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8021 --reload
 ```
@@ -68,7 +68,7 @@ Application startup complete.
 ### 终端 3：启动前端
 
 ```powershell
-cd D:\ruijie\agent\newagent\frontend
+cd <项目根目录>\frontend
 npm run dev
 ```
 
@@ -83,7 +83,7 @@ npm run dev
 ### 启动失败时快速检查
 
 ```powershell
-cd D:\ruijie\agent\newagent
+cd <项目根目录>
 docker compose ps
 docker compose logs --tail 100 postgres qdrant neo4j
 ```
@@ -107,7 +107,7 @@ Get-NetTCPConnection -State Listen -ErrorAction SilentlyContinue |
 在项目根目录执行：
 
 ```powershell
-cd D:\ruijie\agent\newagent
+cd <项目根目录>
 Copy-Item .env.example .env
 ```
 
@@ -122,16 +122,24 @@ EMBEDDING_BASE_URL=你的 Embedding 接口地址
 EMBEDDING_API_KEY=你的 Embedding 密钥
 EMBEDDING_MODEL=text-embedding-3-small
 EMBEDDING_DIMENSION=1536
+EMBEDDING_REQUEST_TIMEOUT_SECONDS=60
+EMBEDDING_MAX_RETRIES=2
+
+DOCUMENT_WORKER_CONCURRENCY=2
+DOCUMENT_EMBEDDING_BATCH_SIZE=8
+DOCUMENT_EMBEDDING_CONCURRENCY=4
 ```
 
 `DATABASE_URL` 和 `QDRANT_URL` 未填写时会使用项目内的本地默认值。
+
+以上文档并发参数表示：最多同时索引 2 份文档，每次 Embedding 请求携带 8 个 Chunk，所有文档合计最多同时发出 4 个 Embedding 请求。当前所用兼容接口要求单批不超过 10，因此默认使用 8；供应商返回批量上限错误时，Worker 还会自动二分批次继续处理。若上游返回 `429`，优先把 `DOCUMENT_EMBEDDING_CONCURRENCY` 降为 `2`；不要直接把三个参数同时调大。
 
 ### 2. 启动 PostgreSQL、Qdrant 和 Neo4j
 
 先启动 Docker Desktop 或你本机使用的 Docker 引擎，然后在项目根目录执行：
 
 ```powershell
-cd D:\ruijie\agent\newagent
+cd <项目根目录>
 docker compose up -d postgres qdrant neo4j
 docker compose ps
 ```
@@ -141,7 +149,7 @@ docker compose ps
 ### 3. 安装后端依赖并建表
 
 ```powershell
-cd D:\ruijie\agent\newagent\backend
+cd <项目根目录>\backend
 
 # 仅在 backend/.venv 不存在时创建
 python -m venv .venv
@@ -155,7 +163,7 @@ python -m venv .venv
 ### 4. 安装前端依赖
 
 ```powershell
-cd D:\ruijie\agent\newagent\frontend
+cd <项目根目录>\frontend
 npm install
 ```
 
@@ -166,7 +174,7 @@ npm install
 ### 终端 1：数据库
 
 ```powershell
-cd D:\ruijie\agent\newagent
+cd <项目根目录>
 docker compose up -d postgres qdrant neo4j
 docker compose ps
 ```
@@ -174,7 +182,7 @@ docker compose ps
 ### 终端 2：后端
 
 ```powershell
-cd D:\ruijie\agent\newagent\backend
+cd <项目根目录>\backend
 .\.venv\Scripts\alembic.exe upgrade head
 .\.venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8021 --reload
 ```
@@ -187,7 +195,7 @@ cd D:\ruijie\agent\newagent\backend
 ### 终端 3：前端
 
 ```powershell
-cd D:\ruijie\agent\newagent\frontend
+cd <项目根目录>\frontend
 npm run dev
 ```
 
@@ -204,7 +212,7 @@ npm run dev
 3. 停止 PostgreSQL、Qdrant 和 Neo4j：
 
 ```powershell
-cd D:\ruijie\agent\newagent
+cd <项目根目录>
 docker compose stop
 ```
 
@@ -215,7 +223,7 @@ docker compose stop
 下面的命令会关闭监听 `5173` 的前端和监听 `8021` 的后端，然后安全停止数据库容器：
 
 ```powershell
-cd D:\ruijie\agent\newagent
+cd <项目根目录>
 
 $appPorts = 5173, 8021
 Get-NetTCPConnection -State Listen -ErrorAction SilentlyContinue |
@@ -237,8 +245,8 @@ docker compose stop
 - PostgreSQL：`newagent_newagent_postgres_data`
 - Qdrant：`newagent_newagent_qdrant_data`
 - Neo4j：`newagent_newagent_neo4j_data`
-- 上传原文件：`D:\ruijie\agent\newagent\backend\data\documents`
-- 生成媒体：`D:\ruijie\agent\newagent\backend\data\media`
+- 上传原文件：`<项目根目录>\backend\data\documents`
+- 生成媒体：`<项目根目录>\backend\data\media`
 
 关机、重启电脑、停止 Docker Desktop、执行 `docker compose stop`，以及执行不带 `-v` 的 `docker compose down`，都不会删除这些数据卷。下次启动容器后，账号、聊天记录、记忆正文和向量索引仍然存在。
 
@@ -269,7 +277,7 @@ docker compose logs -f postgres qdrant neo4j
 查看当前数据库迁移版本：
 
 ```powershell
-cd D:\ruijie\agent\newagent\backend
+cd <项目根目录>\backend
 .\.venv\Scripts\alembic.exe current
 ```
 
@@ -284,6 +292,10 @@ cd D:\ruijie\agent\newagent\backend
 3. 状态变成“文本可检索”后即可在聊天中提问；显示“图谱完成”后还会参与关系和多跳检索。
 4. 回答下方的“参考了 N 处个人资料”可展开查看文件名、页码或章节和原文片段。
 5. 删除文档会异步删除原文件、PostgreSQL 分块、Qdrant 向量和 Neo4j 来源事实；“删除中”消失后才表示完整删除。
+
+PDF 默认使用 `PDF_PARSER_MODE=auto`：普通页面使用 pypdf Layout，检测到表格时使用 pdfplumber 提取成保留表头和行列的 Markdown；表格提取异常会自动降级为 Layout 文本。若只需要文本布局解析，可在 `.env` 设置 `PDF_PARSER_MODE=layout` 后重启后端。
+
+解析器或切块配置改变后，已经完成索引的文档不会自动变化。当前需要删除旧文档并重新上传，才能重新解析、分块、向量化并按需重建图谱。
 
 扫描版 PDF 当前没有内置 OCR，若 PDF 只有图片而没有文本层，处理会提示“未找到可提取文本”。
 

@@ -43,7 +43,12 @@ async def send_chat(
     except Exception as exc:
         failure = classify_chat_failure(exc)
         raise HTTPException(status_code=503, detail=failure.user_message) from exc
-    return {"message": ChatService.serialize_message(message)}
+    return {
+        "message": ChatService.serialize_message(
+            message,
+            include_retrieval_context=payload.include_retrieval_context,
+        )
+    }
 
 
 @router.post("/stream")

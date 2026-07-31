@@ -1,0 +1,317 @@
+[
+  {
+    "id": "financebench_id_00222",
+    "input": "Does AMD have a reasonably healthy liquidity profile based on its quick ratio for FY22? If the quick ratio is not relevant to measure liquidity, please state that and explain why.",
+    "expected_output": "Yes. The quick ratio is 1.57, calculated as (cash and cash equivalents+Short term investments+Accounts receivable, net+receivables from related parties)/ (current liabilities).",
+    "acceptable_sources": [
+      "AMD_2022_10K.pdf"
+    ],
+    "metadata": {
+      "benchmark": "FinanceBench OPEN_SOURCE",
+      "split": "test",
+      "company": "AMD",
+      "doc_name": "AMD_2022_10K",
+      "question_type": "domain-relevant",
+      "question_reasoning": "Logical reasoning (based on numerical reasoning) OR Logical reasoning",
+      "domain_question_num": "dg01",
+      "justification": null,
+      "gold_evidence": [
+        {
+          "source": "AMD_2022_10K.pdf",
+          "page_index": 55,
+          "excerpt": "Consolidated Balance Sheets December 31, 2022 December 25, 2021 (In millions, except par value amounts) ASSETS Current assets: Cash and cash equivalents $ 4,835 $ 2,535 Short-term investments 1,020 1,073 Accounts receivable, net 4,126 2,706 Inventories 3,771 1,955 Receivables from related parties 2 2 Prepaid expenses and other current assets 1,265 312 Total current assets 15,019 8,583 Property and equipment, net 1,513 702 Operating lease right-of-use assets 460 367 Goodwill 24,177 289 Acquisition-related intangibles 24,118 Investment: equity method 83 69 Deferred tax assets 58 931 Other non-current assets 2,152 1,478 Total assets $ 67,580 $ 12,419 LIABILITIES AND STOCKHOLDERS EQUITY Current liabilities: Accounts payable $ 2,493 $ 1,321 Payables to related parties 463 85 Accrued liabilities 3,077 2,424 Current portion of long-term debt, net 312 Other current liabilities 336 98 Total current liabilities 6,369 4,240 Long-term debt, net of current portion 2,467 1 Long-term operating lease liabilities 396 348 Deferred tax liabilities 1,934 12 Other long-term liabilities 1,664 321 Commitments and Contingencies (see Notes 16 and 17) Stockholders equity: Capital stock: Common stock, par value $0.01; shares authorized: 2,250; shares issued: 1,645 and 1,232; shares outstanding: 1,612 and 1,207 16 12 Additional paid-in capital 58,005 11,069 Treasury stock, at cost (shares held: 33 and 25) (3,099) (2,130) Accumulated deficit (131) (1,451) Accumulated other comprehensive loss (41) (3) Total stockholders equity 54,750 7,497 Total liabilities and stockholders equity $ 67,580 $ 12,419"
+        }
+      ]
+    }
+  },
+  {
+    "id": "financebench_id_00995",
+    "input": "What are the major products and services that AMD sells as of FY22?",
+    "expected_output": "AMD sells server microprocessors (CPUs) and graphics processing units (GPUs), data processing units (DPUs), Field Programmable Gate Arrays (FPGAs), and Adaptive System-on-Chip (SoC) products for data centers; CPUs, accelerated processing units (APUs) that integrate CPUs and GPUs, and chipsets for desktop and notebook personal computers; discrete GPUs, and semi-custom SoC products and development services; and embedded CPUs, GPUs, APUs, FPGAs, and Adaptive SoC products.",
+    "acceptable_sources": [
+      "AMD_2022_10K.pdf"
+    ],
+    "metadata": {
+      "benchmark": "FinanceBench OPEN_SOURCE",
+      "split": "test",
+      "company": "AMD",
+      "doc_name": "AMD_2022_10K",
+      "question_type": "domain-relevant",
+      "question_reasoning": "Information extraction",
+      "domain_question_num": "dg07",
+      "justification": null,
+      "gold_evidence": [
+        {
+          "source": "AMD_2022_10K.pdf",
+          "page_index": 3,
+          "excerpt": "Overview We are a global semiconductor company primarily offering: server microprocessors (CPUs) and graphics processing units (GPUs), data processing units (DPUs), Field Programmable Gate Arrays (FPGAs), and Adaptive System-on-Chip (SoC) products for data centers; CPUs, accelerated processing units (APUs) that integrate CPUs and GPUs, and chipsets for desktop and notebook personal computers; discrete GPUs, and semi-custom SoC products and development services; and embedded CPUs, GPUs, APUs, FPGAs, and Adaptive SoC products. From time to time, we may also sell or license portions of our intellectual property (IP) portfolio."
+        }
+      ]
+    }
+  },
+  {
+    "id": "financebench_id_01198",
+    "input": "What drove revenue change as of the FY22 for AMD?",
+    "expected_output": "In 2022, AMD reported Higher sales of their EPYC server processors, higher semi-custom product sales, and the inclusion of Xilinx embedded product sales",
+    "acceptable_sources": [
+      "AMD_2022_10K.pdf"
+    ],
+    "metadata": {
+      "benchmark": "FinanceBench OPEN_SOURCE",
+      "split": "test",
+      "company": "AMD",
+      "doc_name": "AMD_2022_10K",
+      "question_type": "domain-relevant",
+      "question_reasoning": "Information extraction",
+      "domain_question_num": "dg15",
+      "justification": null,
+      "gold_evidence": [
+        {
+          "source": "AMD_2022_10K.pdf",
+          "page_index": 42,
+          "excerpt": "Net revenue for 2022 was $23.6 billion, an increase of 44% compared to 2021 net revenue of $16.4 billion. The increase in net revenue was driven by a 64% increase in Data Center segment revenue primarily due to higher sales of our EPYC server processors, a 21% increase in Gaming segment revenue primarily due to higher semi-custom product sales, and a significant increase in Embedded segment revenue from the prior year period driven by the inclusion of Xilinx embedded product sales."
+        }
+      ]
+    }
+  },
+  {
+    "id": "financebench_id_00917",
+    "input": "What drove operating margin change as of the FY22 for AMD? If operating margin is not a useful metric for a company like this, then please state that and explain why.",
+    "expected_output": "The decrease in AMD's operating income was primarily driven by amortization of intangible assets associated with the Xilinx acquisition",
+    "acceptable_sources": [
+      "AMD_2022_10K.pdf"
+    ],
+    "metadata": {
+      "benchmark": "FinanceBench OPEN_SOURCE",
+      "split": "test",
+      "company": "AMD",
+      "doc_name": "AMD_2022_10K",
+      "question_type": "domain-relevant",
+      "question_reasoning": "Logical reasoning (based on numerical reasoning) OR Numerical reasoning OR Logical reasoning",
+      "domain_question_num": "dg17",
+      "justification": null,
+      "gold_evidence": [
+        {
+          "source": "AMD_2022_10K.pdf",
+          "page_index": 42,
+          "excerpt": "Operating income for 2022 was $1.3 billion compared to operating income of $3.6 billion for 2021. The decrease in operating income was primarily driven by amortization of intangible assets associated with the Xilinx acquisition."
+        }
+      ]
+    }
+  },
+  {
+    "id": "financebench_id_01279",
+    "input": "Among operations, investing, and financing activities, which brought in the most (or lost the least) cash flow for AMD in FY22?",
+    "expected_output": "In 2022, AMD brought in the most cashflow from Operations",
+    "acceptable_sources": [
+      "AMD_2022_10K.pdf"
+    ],
+    "metadata": {
+      "benchmark": "FinanceBench OPEN_SOURCE",
+      "split": "test",
+      "company": "AMD",
+      "doc_name": "AMD_2022_10K",
+      "question_type": "domain-relevant",
+      "question_reasoning": "Numerical reasoning",
+      "domain_question_num": "dg19",
+      "justification": null,
+      "gold_evidence": [
+        {
+          "source": "AMD_2022_10K.pdf",
+          "page_index": 57,
+          "excerpt": "Advanced Micro Devices, Inc. Consolidated Statements of Cash Flows Year Ended December 31, 2022 December 25, 2021 December 26, 2020 (In millions) Cash flows from operating activities: Net income $ 1,320 $ 3,162 $ 2,490 Adjustments to reconcile net income to net cash provided by operating activities: Depreciation and amortization 4,174 407 312 Stock-based compensation 1,081 379 274 Amortization of debt discount and issuance costs 5 14 Amortization of operating lease right-of-use assets 88 56 42 Amortization of inventory fair value adjustment 189 Loss on debt redemption, repurchase and conversion 7 54 Loss on sale or disposal of property and equipment 16 34 33 Deferred income taxes (1,505) 308 (1,223) (Gains) losses on equity investments, net 62 (56) (2) Other (14) (7) 8 Changes in operating assets and liabilities: Accounts receivable, net (1,091) (640) (219) Inventories (1,401) (556) (417) Receivables from related parties (13) 8 10 Prepaid expenses and other assets (1,197) (920) (231) Payables to related parties 379 7 (135) Accounts payable 931 801 (513) Accrued liabilities and other 546 526 574 Net cash provided by operating activities 3,565 3,521 1,071 Cash flows from investing activities: Purchases of property and equipment (450) (301) (294) Purchases of short-term investments (2,667) (2,056) (850) Proceeds from maturity of short-term investments 4,310 1,678 192 Cash received from acquisition of Xilinx 2,366 Acquisition of Pensando, net of cash acquired (1,544) Other (16) (7) Net cash provided by (used in) investing activities 1,999 (686) (952) Cash flows from financing activities: Proceeds from debt, net of issuance costs 991 200 Repayment of debt (312) (200) Proceeds from sales of common stock through employee equity plans 167 104 85 Repurchases of common stock (3,702) (1,762) Common stock repurchases for tax withholding on employee equity plans (406) (237) (78) Other (2) (1) Net cash (used in) provided by financing activities (3,264) (1,895) 6 Net increase in cash and cash equivalents 2,300 940 125 Cash and cash equivalents at beginning of year 2,535 1,595 1,470 Cash and cash equivalents at end of year $ 4,835 $ 2,535 $ 1,595"
+        }
+      ]
+    }
+  },
+  {
+    "id": "financebench_id_00563",
+    "input": "From FY21 to FY22, excluding Embedded, in which AMD reporting segment did sales proportionally increase the most?",
+    "expected_output": "Data Center",
+    "acceptable_sources": [
+      "AMD_2022_10K.pdf"
+    ],
+    "metadata": {
+      "benchmark": "FinanceBench OPEN_SOURCE",
+      "split": "test",
+      "company": "AMD",
+      "doc_name": "AMD_2022_10K",
+      "question_type": "novel-generated",
+      "question_reasoning": null,
+      "domain_question_num": null,
+      "justification": "Data center: \nFY22: 6,043\nFY21: 3,694 \n6,043/3,694-1 = 63,59%\n\nClient: \nFY22: 6,201\nFY21: 6,887 \n6,201/6,887-1 = -9,96%\n\n\nGaming: \nFY22: 6,805\nFY21: 5,607 \n6,805/5,607-1 = 21,37%",
+      "gold_evidence": [
+        {
+          "source": "AMD_2022_10K.pdf",
+          "page_index": 47,
+          "excerpt": "Year Ended December 31, 2022 December 25, 2021 (In millions) Net revenue: Data Center $ 6,043 $ 3,694 Client 6,201 6,887 Gaming 6,805 5,607 Embedded 4,552 246 Total net revenue $ 23,601 $ 16,434 Operating income (loss): Data Center $ 1,848 $ 991 Client 1,190 2,088 Gaming 953 934 Embedded 2,252 44 All Other (4,979) (409) Total operating income (loss) $ 1,264 $ 3,648"
+        }
+      ]
+    }
+  },
+  {
+    "id": "financebench_id_00757",
+    "input": "Did AMD report customer concentration in FY22?",
+    "expected_output": "Yes, one customer accounted for 16% of consolidated net revenue",
+    "acceptable_sources": [
+      "AMD_2022_10K.pdf"
+    ],
+    "metadata": {
+      "benchmark": "FinanceBench OPEN_SOURCE",
+      "split": "test",
+      "company": "AMD",
+      "doc_name": "AMD_2022_10K",
+      "question_type": "novel-generated",
+      "question_reasoning": null,
+      "domain_question_num": null,
+      "justification": "One customer ccounting for 16% of net evenue is a high customer concenration",
+      "gold_evidence": [
+        {
+          "source": "AMD_2022_10K.pdf",
+          "page_index": 11,
+          "excerpt": "One customer accounted for 16% of our consolidated net revenue for the year ended December 31, 2022. Sales to this customer consisted of sales of products from our Gaming segment. A loss of this customer would have a material adverse effect on our business."
+        }
+      ]
+    }
+  },
+  {
+    "id": "financebench_id_01009",
+    "input": "What are the geographies that Pepsico primarily operates in as of FY2022?",
+    "expected_output": "As of FY2022, Pepsico primarily operates in the following geographies: North America, Latin America, Europe, Africa, Middle East, South Asia, Asia Pacific, Australia, New Zealand and China.",
+    "acceptable_sources": [
+      "PEPSICO_2022_10K.pdf"
+    ],
+    "metadata": {
+      "benchmark": "FinanceBench OPEN_SOURCE",
+      "split": "test",
+      "company": "PepsiCo",
+      "doc_name": "PEPSICO_2022_10K",
+      "question_type": "domain-relevant",
+      "question_reasoning": "Information extraction",
+      "domain_question_num": "dg08",
+      "justification": null,
+      "gold_evidence": [
+        {
+          "source": "PEPSICO_2022_10K.pdf",
+          "page_index": 3,
+          "excerpt": "Forward-Looking Statements This Annual Report on Form 10-K contains statements reflecting our views about our future performance that constitute forward-looking statements within the meaning of the Private Securities Litigation Reform Act of 1995 (Reform Act). Statements that constitute forward-looking statements within the meaning of the Reform Act are generally identified through the inclusion of words such as aim, anticipate, believe, drive, estimate, expect, expressed confidence, forecast, future, goal, guidance, intend, may, objective, outlook, plan, position, potential, project, seek, should, strategy, target, will or similar statements or variations of such words and other similar expressions. All statements addressing our future operating performance, and statements addressing events and developments that we expect or anticipate will occur in the future, are forward-looking statements within the meaning of the Reform Act. These forward-looking statements are based on currently available information, operating plans and projections about future events and trends. They inherently involve risks and uncertainties that could cause actual results to differ materially from those predicted in any such forward-looking statement. These risks and uncertainties include, but are not limited to, those described in Item 1A. Risk Factors and Item 7. Managements Discussion and Analysis of Financial Condition and Results of Operations Our Business Our Business Risks. Investors are cautioned not to place undue reliance on any such forward-looking statements, which speak only as of the date they are made. We undertake no obligation to update any forward-looking statement, whether as a result of new information, future events or otherwise. The discussion of risks in this report is by no means all-inclusive but is designed to highlight what we believe are important factors to consider when evaluating our future performance. PART I Item 1. Business. When used in this report, the terms we, us, our, PepsiCo and the Company mean PepsiCo, Inc. and its consolidated subsidiaries, collectively. Certain terms used in this Annual Report on Form 10-K are defined in the Glossary included in Item 7. of this report. Company Overview We were incorporated in Delaware in 1919 and reincorporated in North Carolina in 1986. We are a leading global beverage and convenient food company with a complementary portfolio of brands, including Lays, Doritos, Cheetos, Gatorade, Pepsi-Cola, Mountain Dew, Quaker and SodaStream. Through our operations, authorized bottlers, contract manufacturers and other third parties, we make, market, distribute and sell a wide variety of beverages and convenient foods, serving customers and consumers in more than 200 countries and territories. Our Operations We are organized into seven reportable segments (also referred to as divisions), as follows: 1) Frito-Lay North America (FLNA), which includes our branded convenient food businesses in the United States and Canada; 2) Quaker Foods North America (QFNA), which includes our branded convenient food businesses, such as cereal, rice, pasta and other branded food, in the United States and Canada; 3) PepsiCo Beverages North America (PBNA), which includes our beverage businesses in the United States and Canada; 4) Latin America (LatAm), which includes all of our beverage and convenient food businesses in Latin America; 5) Europe, which includes all of our beverage and convenient food businesses in Europe;"
+        },
+        {
+          "source": "PEPSICO_2022_10K.pdf",
+          "page_index": 4,
+          "excerpt": "6) Africa, Middle East and South Asia (AMESA), which includes all of our beverage and convenient food businesses in Africa, the Middle East and South Asia; and 7) Asia Pacific, Australia and New Zealand and China Region (APAC), which includes all of our beverage and convenient food businesses in Asia Pacific, Australia and New Zealand, and China region."
+        }
+      ]
+    }
+  },
+  {
+    "id": "financebench_id_00735",
+    "input": "Has Pepsico reported any materially important ongoing legal battles from FY2022 and FY2021?",
+    "expected_output": "No, Pepsico is not involved in material legal battles.",
+    "acceptable_sources": [
+      "PEPSICO_2022_10K.pdf"
+    ],
+    "metadata": {
+      "benchmark": "FinanceBench OPEN_SOURCE",
+      "split": "test",
+      "company": "PepsiCo",
+      "doc_name": "PEPSICO_2022_10K",
+      "question_type": "domain-relevant",
+      "question_reasoning": "Information extraction",
+      "domain_question_num": "dg11",
+      "justification": "Management believes the final outcome of legal proceedings will not have a material adverse outcome.",
+      "gold_evidence": [
+        {
+          "source": "PEPSICO_2022_10K.pdf",
+          "page_index": 25,
+          "excerpt": "Item 3. Legal Proceedings. We and our subsidiaries are party to a variety of litigation, claims, legal or regulatory proceedings, inquiries and investigations. While the results of such litigation, claims, legal or regulatory proceedings, inquiries and investigations cannot be predicted with certainty, management believes that the final outcome of the foregoing will not have a material adverse effect on our financial condition, results of operations or cash flows. See also Item 1. Business Regulatory Matters and Item 1A. Risk Factors."
+        }
+      ]
+    }
+  },
+  {
+    "id": "financebench_id_01328",
+    "input": "What is the quantity of restructuring costs directly outlined in Pepsico's income statements for FY2022? If restructuring costs are not explicitly outlined then state 0.",
+    "expected_output": "Pepsico's restructuring costs in FY2022 amounted to $411 million .",
+    "acceptable_sources": [
+      "PEPSICO_2022_10K.pdf"
+    ],
+    "metadata": {
+      "benchmark": "FinanceBench OPEN_SOURCE",
+      "split": "test",
+      "company": "PepsiCo",
+      "doc_name": "PEPSICO_2022_10K",
+      "question_type": "domain-relevant",
+      "question_reasoning": "Information extraction",
+      "domain_question_num": "dg21",
+      "justification": null,
+      "gold_evidence": [
+        {
+          "source": "PEPSICO_2022_10K.pdf",
+          "page_index": 77,
+          "excerpt": "Note 3 Restructuring and Impairment Charges 2019 Multi-Year Productivity Plan We publicly announced a multi-year productivity plan on February 15, 2019 (2019 Productivity Plan) that will leverage new technology and business models to further simplify, harmonize and automate processes; re-engineer our go-to-market and information systems, including deploying the right automation for each market; and simplify our organization and optimize our manufacturing and supply chain footprint. To build on the successful implementation of the 2019 Productivity Plan, in the fourth quarter of 2022, we expanded and extended the plan through the end of 2028 to take advantage of additional opportunities within the initiatives described above. As a result, we expect to incur pre-tax charges of approximately $3.65 billion, including cash expenditures of approximately $2.9 billion. These pre-tax charges are expected to consist of approximately 55% of severance and other employee-related costs, 10% for asset impairments (all non-cash) resulting from plant closures and related actions and 35% for other costs associated with the implementation of our initiatives. The total plan pre-tax charges are expected to be incurred by division approximately as follows: FLNA QFNA PBNA LatAm Europe AMESA APAC Corporate Expected pre-tax charges 15 % 1 % 25 % 10 % 25 % 5 % 4 % 15 % A summary of our 2019 Productivity Plan charges is as follows: 2022 2021 2020 Cost of sales $ 33 $ 29 $ 30 Selling, general and administrative expenses 347 208 239 Other pension and retiree medical benefits expense 31 10 20 Total restructuring and impairment charges $ 411 $ 247 $ 289"
+        }
+      ]
+    }
+  },
+  {
+    "id": "financebench_id_03620",
+    "input": "What is the FY2022 unadjusted EBITDA less capex for PepsiCo? Define unadjusted EBITDA as unadjusted operating income + depreciation and amortization [from cash flow statement]. Answer in USD millions. Respond to the question by assuming the perspective of an investment analyst who can only use the details shown within the statement of cash flows and the income statement.",
+    "expected_output": "$9068.00",
+    "acceptable_sources": [
+      "PEPSICO_2022_10K.pdf"
+    ],
+    "metadata": {
+      "benchmark": "FinanceBench OPEN_SOURCE",
+      "split": "test",
+      "company": "PepsiCo",
+      "doc_name": "PEPSICO_2022_10K",
+      "question_type": "metrics-generated",
+      "question_reasoning": "Numerical reasoning",
+      "domain_question_num": null,
+      "justification": "The metric in question was calculated using other simpler metrics. The various simpler metrics (from the current and, if relevant, previous fiscal year(s)) used were:\n\nMetric 1: Depreciation and amortization. This metric was located in the 10K as a single line item named: Depreciation and amortization.\n\nMetric 2: Unadjusted operating income. This metric was located in the 10K as a single line item named: Operating Profit.\n\nMetric 3: Capital expenditures. This metric was located in the 10K as a single line item named: Capital spending.",
+      "gold_evidence": [
+        {
+          "source": "PEPSICO_2022_10K.pdf",
+          "page_index": 61,
+          "excerpt": "Table of Contents Consolidated Statement of Income PepsiCo, Inc. and Subsidiaries Fiscal years ended December 31, 2022, December 25, 2021 and December 26, 2020 (in millions except per share amounts) 2022 2021 2020 Net Revenue $ 86,392 $ 79,474 $ 70,372 Cost of sales 40,576 37,075 31,797 Gross profit 45,816 42,399 38,575 Selling, general and administrative expenses 34,459 31,237 28,453 Gain associated with the Juice Transaction (see Note 13) (3,321) Impairment of intangible assets (see Notes 1 and 4) 3,166 42 Operating Profit 11,512 11,162 10,080 Other pension and retiree medical benefits income 132 522 117 Net interest expense and other (939) (1,863) (1,128) Income before income taxes 10,705 9,821 9,069 Provision for income taxes 1,727 2,142 1,894 Net income 8,978 7,679 7,175 Less: Net income attributable to noncontrolling interests 68 61 55 Net Income Attributable to PepsiCo $ 8,910 $ 7,618 $ 7,120 Net Income Attributable to PepsiCo per Common Share Basic $ 6.45 $ 5.51 $ 5.14 Diluted $ 6.42 $ 5.49 $ 5.12 Weighted-average common shares outstanding Basic 1,380 1,382 1,385 Diluted 1,387 1,389 1,392 See accompanying notes to the consolidated financial statements. 60"
+        },
+        {
+          "source": "PEPSICO_2022_10K.pdf",
+          "page_index": 63,
+          "excerpt": "Table of Contents Consolidated Statement of Cash Flows PepsiCo, Inc. and Subsidiaries Fiscal years ended December 31, 2022, December 25, 2021 and December 26, 2020 (in millions) 2022 2021 2020 Operating Activities Net income $ 8,978 $ 7,679 $ 7,175 Depreciation and amortization 2,763 2,710 2,548 Gain associated with the Juice Transaction (3,321) Impairment and other charges 3,618 Operating lease right-of-use asset amortization 517 505 478 Share-based compensation expense 343 301 264 Restructuring and impairment charges 411 247 289 Cash payments for restructuring charges (224) (256) (255) Acquisition and divestiture-related charges 80 (4) 255 Cash payments for acquisition and divestiture-related charges (46) (176) (131) Pension and retiree medical plan expenses 419 123 408 Pension and retiree medical plan contributions (384) (785) (562) Deferred income taxes and other tax charges and credits (873) 298 361 Tax expense related to the TCJ Act 86 190 Tax payments related to the TCJ Act (309) (309) (78) Change in assets and liabilities: Accounts and notes receivable (1,763) (651) (420) Inventories (1,142) (582) (516) Prepaid expenses and other current assets 118 159 26 Accounts payable and other current liabilities 1,842 1,762 766 Income taxes payable 57 30 (159) Other, net (359) 375 164 Net Cash Provided by Operating Activities 10,811 11,616 10,613 Investing Activities Capital spending (5,207) (4,625) (4,240) Sales of property, plant and equipment 251 166 55 Acquisitions, net of cash acquired, investments in noncontrolled affiliates and purchases of intangible and other assets (873) (61) (6,372) Proceeds associated with the Juice Transaction 3,456 Other divestitures, sales of investments in noncontrolled affiliates and other assets 49 169 6 Short-term investments, by original maturity: More than three months - purchases (291) (1,135) More than three months - maturities 150 1,135 Three months or less, net 24 (58) 27 Other investing, net 11 5 40 Net Cash Used for Investing Activities (2,430) (3,269) (11,619) (Continued on following page) 62"
+        }
+      ]
+    }
+  },
+  {
+    "id": "financebench_id_04481",
+    "input": "What is the FY2022 unadjusted EBITDA % margin for PepsiCo? Calculate unadjusted EBITDA using unadjusted operating income and D&A (from cash flow statement). Give a response to the question by relying on the details shown in the statement of cash flows and the P&L statement.",
+    "expected_output": "16.5%",
+    "acceptable_sources": [
+      "PEPSICO_2022_10K.pdf"
+    ],
+    "metadata": {
+      "benchmark": "FinanceBench OPEN_SOURCE",
+      "split": "test",
+      "company": "PepsiCo",
+      "doc_name": "PEPSICO_2022_10K",
+      "question_type": "metrics-generated",
+      "question_reasoning": "Numerical reasoning",
+      "domain_question_num": null,
+      "justification": "The metric in question was calculated using other simpler metrics. The various simpler metrics (from the current and, if relevant, previous fiscal year(s)) used were:\n\nMetric 1: Depreciation and amortization. This metric was located in the 10K as a single line item named: Depreciation and amortization.\n\nMetric 2: Unadjusted operating income. This metric was located in the 10K as a single line item named: Operating Profit.\n\nMetric 3: Total revenue. This metric was located in the 10K as a single line item named: Net Revenue.",
+      "gold_evidence": [
+        {
+          "source": "PEPSICO_2022_10K.pdf",
+          "page_index": 61,
+          "excerpt": "Table of Contents Consolidated Statement of Income PepsiCo, Inc. and Subsidiaries Fiscal years ended December 31, 2022, December 25, 2021 and December 26, 2020 (in millions except per share amounts) 2022 2021 2020 Net Revenue $ 86,392 $ 79,474 $ 70,372 Cost of sales 40,576 37,075 31,797 Gross profit 45,816 42,399 38,575 Selling, general and administrative expenses 34,459 31,237 28,453 Gain associated with the Juice Transaction (see Note 13) (3,321) Impairment of intangible assets (see Notes 1 and 4) 3,166 42 Operating Profit 11,512 11,162 10,080 Other pension and retiree medical benefits income 132 522 117 Net interest expense and other (939) (1,863) (1,128) Income before income taxes 10,705 9,821 9,069 Provision for income taxes 1,727 2,142 1,894 Net income 8,978 7,679 7,175 Less: Net income attributable to noncontrolling interests 68 61 55 Net Income Attributable to PepsiCo $ 8,910 $ 7,618 $ 7,120 Net Income Attributable to PepsiCo per Common Share Basic $ 6.45 $ 5.51 $ 5.14 Diluted $ 6.42 $ 5.49 $ 5.12 Weighted-average common shares outstanding Basic 1,380 1,382 1,385 Diluted 1,387 1,389 1,392 See accompanying notes to the consolidated financial statements. 60"
+        },
+        {
+          "source": "PEPSICO_2022_10K.pdf",
+          "page_index": 63,
+          "excerpt": "Table of Contents Consolidated Statement of Cash Flows PepsiCo, Inc. and Subsidiaries Fiscal years ended December 31, 2022, December 25, 2021 and December 26, 2020 (in millions) 2022 2021 2020 Operating Activities Net income $ 8,978 $ 7,679 $ 7,175 Depreciation and amortization 2,763 2,710 2,548 Gain associated with the Juice Transaction (3,321) Impairment and other charges 3,618 Operating lease right-of-use asset amortization 517 505 478 Share-based compensation expense 343 301 264 Restructuring and impairment charges 411 247 289 Cash payments for restructuring charges (224) (256) (255) Acquisition and divestiture-related charges 80 (4) 255 Cash payments for acquisition and divestiture-related charges (46) (176) (131) Pension and retiree medical plan expenses 419 123 408 Pension and retiree medical plan contributions (384) (785) (562) Deferred income taxes and other tax charges and credits (873) 298 361 Tax expense related to the TCJ Act 86 190 Tax payments related to the TCJ Act (309) (309) (78) Change in assets and liabilities: Accounts and notes receivable (1,763) (651) (420) Inventories (1,142) (582) (516) Prepaid expenses and other current assets 118 159 26 Accounts payable and other current liabilities 1,842 1,762 766 Income taxes payable 57 30 (159) Other, net (359) 375 164 Net Cash Provided by Operating Activities 10,811 11,616 10,613 Investing Activities Capital spending (5,207) (4,625) (4,240) Sales of property, plant and equipment 251 166 55 Acquisitions, net of cash acquired, investments in noncontrolled affiliates and purchases of intangible and other assets (873) (61) (6,372) Proceeds associated with the Juice Transaction 3,456 Other divestitures, sales of investments in noncontrolled affiliates and other assets 49 169 6 Short-term investments, by original maturity: More than three months - purchases (291) (1,135) More than three months - maturities 150 1,135 Three months or less, net 24 (58) 27 Other investing, net 11 5 40 Net Cash Used for Investing Activities (2,430) (3,269) (11,619) (Continued on following page) 62"
+        }
+      ]
+    }
+  }
+]

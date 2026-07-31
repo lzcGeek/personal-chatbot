@@ -28,7 +28,7 @@ async function submit(): Promise<void> {
       <p>登录后，你的会话、记忆和 MCP 服务将与其他用户隔离。</p>
       <label>
         用户名
-        <input v-model.trim="username" autocomplete="username" minlength="3" maxlength="128" required />
+        <input v-model.trim="username" autocomplete="username" minlength="3" maxlength="128" placeholder="示例：player01（至少 3 个字符）" required />
       </label>
       <label>
         密码
@@ -38,6 +38,7 @@ async function submit(): Promise<void> {
           type="password"
           minlength="8"
           maxlength="1024"
+          placeholder="请输入密码（至少 8 个字符）"
           required
         />
       </label>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue'
 import { createSkill, disableSkill, enableSkill, getSkills, reloadSkills, uploadSkill, type SkillInfo } from '../api/skills'
+import { errorText, notify } from '../notifications'
 
 
 const skills = ref<SkillInfo[]>([])
@@ -34,10 +35,21 @@ async function handleReload(): Promise<void> {
   error.value = ''
   try {
     skills.value = await reloadSkills()
+    notify(`Skills 已重载，共发现 ${skills.value.length} 个`)
   } catch (reason: unknown) {
-    error.value = reason instanceof Error ? reason.message : '重载失败'
+    error.value = errorText(reason, '重载失败')
+    notify(error.value, 'error')
   } finally {
     loading.value = false
+  }
+}
+
+function toggleEditor(): void {
+  if (showEditor.value) {
+    showEditor.value = false
+    notify('已取消新建，表单内容未保存', 'info')
+  } else {
+    openEditor()
   }
 }
 
@@ -62,6 +74,7 @@ async function handleUpload(event: Event): Promise<void> {
     await uploadSkill(file)
     input.value = ''
     await refresh()
+    notify(`Skill 文件“${file.name}”已上传`)
   } catch (reason: unknown) {
     const msg = reason instanceof Error ? reason.message : '上传失败'
     if (reason && typeof reason === 'object' && 'response' in reason) {
@@ -70,6 +83,7 @@ async function handleUpload(event: Event): Promise<void> {
     } else {
       error.value = msg
     }
+    notify(error.value, 'error')
   } finally {
     loading.value = false
   }
@@ -84,8 +98,10 @@ async function toggleSkill(skill: SkillInfo): Promise<void> {
       await enableSkill(skill.name)
     }
     skill.enabled = !skill.enabled
+    notify(`Skill“${skill.name}”已${skill.enabled ? '启用' : '停用'}`)
   } catch (reason: unknown) {
-    error.value = reason instanceof Error ? reason.message : '操作失败'
+    error.value = errorText(reason, '操作失败')
+    notify(error.value, 'error')
   } finally {
     loading.value = false
   }
@@ -104,8 +120,10 @@ async function handleCreate(): Promise<void> {
     showEditor.value = false
     Object.assign(editor, { name: '', description: '', content: '' })
     await refresh()
+    notify('Skill 已保存')
   } catch (reason: unknown) {
-    error.value = reason instanceof Error ? reason.message : '创建失败'
+    error.value = errorText(reason, '创建失败')
+    notify(error.value, 'error')
   } finally {
     loading.value = false
   }
@@ -117,7 +135,7 @@ async function handleCreate(): Promise<void> {
     <div class="tab-actions">
       <button class="btn-secondary" @click="handleReload" :disabled="loading">重载 Skills</button>
       <button class="btn-secondary" @click="pickFile" :disabled="loading">上传 Skill 文件</button>
-      <button class="btn-primary" @click="showEditor ? (showEditor = false) : openEditor()">
+      <button class="btn-primary" @click="toggleEditor">
         {{ showEditor ? '取消' : '新建 Skill' }}
       </button>
     </div>
@@ -126,18 +144,18 @@ async function handleCreate(): Promise<void> {
     <form v-if="showEditor" class="skill-form" @submit.prevent="handleCreate">
       <label>
         名称
-        <input v-model="editor.name" placeholder="my-skill" required />
+        <input v-model="editor.name" placeholder="示例：code-review（调用 Skill 时使用的唯一名称）" required />
       </label>
       <label>
         描述
-        <input v-model="editor.description" placeholder="这个 Skill 的用途" required />
+        <input v-model="editor.description" placeholder="示例：检查代码缺陷并给出修改建议（用于说明适用场景）" required />
       </label>
       <label>
         内容
         <textarea
           v-model="editor.content"
           rows="8"
-          placeholder="Skill 的指令内容（将作为 Markdown 正文）"
+          placeholder="示例：当用户要求审查代码时，先检查正确性和安全性，再按优先级列出问题。此处内容将作为 Skill 的 Markdown 指令。"
           required
         />
       </label>

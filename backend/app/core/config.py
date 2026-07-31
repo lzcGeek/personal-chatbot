@@ -42,6 +42,8 @@ class Settings(BaseSettings):
     embedding_api_key: str | None = None
     embedding_model: str = "text-embedding-3-small"
     embedding_dimension: int = Field(default=1536, ge=1)
+    embedding_request_timeout_seconds: float = Field(default=60, ge=1, le=600)
+    embedding_max_retries: int = Field(default=2, ge=0, le=10)
 
     session_cookie_name: str = "newagent_session"
     csrf_cookie_name: str = "newagent_csrf"
@@ -69,11 +71,16 @@ class Settings(BaseSettings):
     tts_provider_model: str = "tts-1"
     tts_profiles: str = "alloy"
     document_max_upload_mb: int = Field(default=25, ge=1, le=1024)
+    pdf_parser_mode: str = "auto"
     document_chunk_characters: int = Field(default=1200, ge=200, le=10000)
     document_chunk_overlap_characters: int = Field(default=200, ge=0, le=2000)
     document_context_window: int = Field(default=1, ge=0, le=5)
     document_worker_poll_seconds: float = Field(default=1.0, ge=0.1, le=60)
     document_worker_max_attempts: int = Field(default=5, ge=1, le=100)
+    document_worker_concurrency: int = Field(default=2, ge=1, le=8)
+    document_embedding_batch_size: int = Field(default=8, ge=1, le=256)
+    document_embedding_concurrency: int = Field(default=4, ge=1, le=32)
+    document_vector_candidate_limit: int = Field(default=100, ge=1, le=100)
     document_result_limit: int = Field(default=6, ge=1, le=20)
     document_relevance_threshold: float = Field(default=0.45, ge=0, le=1)
 

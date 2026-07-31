@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref, watch } from 'vue'
 import { addMcpServer, deleteMcpServer, disableMcpServer, enableMcpServer, getMcpServers, updateMcpNetworkPolicy, type McpServerInfo } from '../api/mcp'
+import { errorText, notify } from '../notifications'
 
 
 const servers = ref<McpServerInfo[]>([])
@@ -35,6 +36,15 @@ async function refresh(): Promise<void> {
   }
 }
 
+function toggleForm(): void {
+  if (showForm.value) {
+    showForm.value = false
+    notify('已取消添加，表单内容未保存', 'info')
+  } else {
+    showForm.value = true
+  }
+}
+
 async function submitAdd(): Promise<void> {
   if (!form.name.trim()) return
   loading.value = true
@@ -61,7 +71,8 @@ async function submitAdd(): Promise<void> {
     })
     servers.value.unshift(added)
     showForm.value = false
-    Object.assign(form, { name: '', command: '', args: '', env: '', url: '', requiresNetwork: false })
+    Object.assign(form, { name: '', transport: 'stdio', command: '', args: '', env: '', url: '', requiresNetwork: false })
+    notify(`MCP 服务“${added.name}”已添加`)
   } catch (reason: unknown) {
     if (reason && typeof reason === 'object' && 'response' in reason) {
       const axiosErr = reason as { response?: { status?: number; data?: { detail?: string } } }
@@ -73,6 +84,7 @@ async function submitAdd(): Promise<void> {
     } else {
       error.value = reason instanceof Error ? reason.message : '添加失败'
     }
+    notify(error.value, 'error')
   } finally {
     loading.value = false
   }
@@ -87,20 +99,29 @@ async function toggleServer(server: McpServerInfo): Promise<void> {
       await enableMcpServer(server.id)
     }
     server.enabled = !server.enabled
+    notify(`MCP 服务“${server.name}”已${server.enabled ? '启用' : '停用'}`)
   } catch (reason: unknown) {
-    error.value = reason instanceof Error ? reason.message : '操作失败'
+    error.value = errorText(reason, '操作失败')
+    notify(error.value, 'error')
   } finally {
     loading.value = false
   }
 }
 
-async function remove(id: number): Promise<void> {
+async function remove(server: McpServerInfo): Promise<void> {
+  if (!window.confirm(`删除 MCP 服务“${server.name}”？其工具将立即不可用。`)) {
+    notify('已取消删除 MCP 服务', 'info')
+    return
+  }
+  const id = server.id
   deletingId.value = id
   try {
     await deleteMcpServer(id)
     servers.value = servers.value.filter(item => item.id !== id)
+    notify(`MCP 服务“${server.name}”已删除`)
   } catch (reason: unknown) {
-    error.value = reason instanceof Error ? reason.message : '删除失败'
+    error.value = errorText(reason, '删除失败')
+    notify(error.value, 'error')
   } finally {
     deletingId.value = null
   }
@@ -112,8 +133,10 @@ async function toggleNetworkPolicy(server: McpServerInfo): Promise<void> {
   try {
     const updated = await updateMcpNetworkPolicy(server.id, !server.requires_network)
     Object.assign(server, updated)
+    notify(`“${server.name}”已设为${updated.requires_network ? '联网工具' : '本地工具'}`)
   } catch (reason: unknown) {
-    error.value = reason instanceof Error ? reason.message : '联网分类更新失败'
+    error.value = errorText(reason, '联网分类更新失败')
+    notify(error.value, 'error')
   } finally {
     loading.value = false
   }
@@ -128,13 +151,13 @@ onMounted(refresh)
   <div class="mcp-tab">
     <div class="tab-actions">
       <button class="btn-secondary" @click="refresh" :disabled="loading">刷新</button>
-      <button class="btn-primary" @click="showForm = !showForm">{{ showForm ? '取消' : '添加服务' }}</button>
+      <button class="btn-primary" @click="toggleForm">{{ showForm ? '取消' : '添加服务' }}</button>
     </div>
 
     <form v-if="showForm" class="mcp-form" @submit.prevent="submitAdd">
       <label>
         名称
-        <input v-model="form.name" placeholder="我的 MCP 服务" required />
+        <input v-model="form.name" placeholder="示例：本地文件工具（用于在列表中识别服务）" required />
       </label>
       <label>
         传输类型
@@ -147,20 +170,20 @@ onMounted(refresh)
       <template v-if="form.transport === 'stdio'">
         <label>
           命令
-          <input v-model="form.command" placeholder="npx" required />
+          <input v-model="form.command" placeholder="示例：npx（启动 MCP 服务的程序）" required />
         </label>
         <label>
           参数（逗号分隔）
-          <input v-model="form.args" placeholder="-y, @mcp/server" />
+          <input v-model="form.args" placeholder="示例：-y, @modelcontextprotocol/server-filesystem（逗号分隔）" />
         </label>
         <label>
           环境变量（每行 KEY=VALUE）
-          <textarea v-model="form.env" rows="2" />
+          <textarea v-model="form.env" rows="2" placeholder="示例：API_KEY=你的密钥&#10;每行一个变量；敏感值请只保存在本机" />
         </label>
       </template>
       <label v-else>
         URL
-        <input v-model="form.url" placeholder="https://..." required />
+        <input v-model="form.url" placeholder="示例：https://mcp.example.com/sse（服务连接地址）" required />
       </label>
       <label class="mcp-network-option">
         <input v-model="form.requiresNetwork" type="checkbox" />
@@ -196,7 +219,7 @@ onMounted(refresh)
           <input type="checkbox" :checked="server.enabled" @change="toggleServer(server)" />
           <span class="toggle-slider"></span>
         </label>
-        <button class="btn-danger" @click="remove(server.id)" :disabled="deletingId === server.id">
+        <button class="btn-danger" @click="remove(server)" :disabled="deletingId === server.id">
           {{ deletingId === server.id ? '删除中…' : '删除' }}
         </button>
       </li>

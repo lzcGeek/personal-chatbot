@@ -16,7 +16,7 @@ DeepEval 安装在独立的 `backend/.venv-eval` 虚拟环境中，避免其 `cl
 如果 `backend/.venv-eval` 不存在，在项目根目录执行：
 
 ```powershell
-cd D:\ruijie\agent\newagent\backend
+cd <项目根目录>\backend
 
 python -m venv .venv-eval
 .\.venv-eval\Scripts\pip.exe install -e ".[dev,eval]"
@@ -27,7 +27,7 @@ python -m venv .venv-eval
 ## 3. 验证安装
 
 ```powershell
-cd D:\ruijie\agent\newagent\backend
+cd <项目根目录>\backend
 
 .\.venv-eval\Scripts\python.exe -c "import importlib.metadata as m; print(m.version('deepeval'))"
 .\.venv-eval\Scripts\pip.exe check
@@ -53,6 +53,7 @@ backend/
 ├─ tests/                         # 普通单元测试和集成测试
 ├─ evals/
 │  ├─ test_rag.py                 # DeepEval 测试入口
+│  ├─ evaluate_gold_retrieval.py  # 不调用 Judge 的黄金证据快测
 │  ├─ datasets/
 │  │  └─ rag_goldens.json         # 问题、标准答案和可接受来源
 ├─ .venv/                         # 后端主环境
@@ -73,6 +74,10 @@ OPENAI_MODEL=your-model-name
 ```
 
 评测模型最好与被评测的生成模型不同，以降低自评偏差。如果使用同一个模型，需要在评测报告中注明。
+
+### FinanceBench 30 题评测
+
+项目已从 FinanceBench 公开人工标注中整理出 18 题开发集、12 题保留测试集和 30 题合集。需要上传的 5 份 PDF、数据集切换方式和完整操作顺序见项目根目录的 `FINANCEBENCH_EVAL.md`。
 
 ## 6. 运行前准备
 
@@ -95,12 +100,43 @@ EVAL_KEEP_CONVERSATIONS=false
 
 默认只运行数据集的前 5 条，以控制生成模型和裁判模型费用。设置 `EVAL_CASE_LIMIT=0` 可运行全部用例。测试创建的会话默认在结束时删除；如需保留并在界面检查，设置 `EVAL_KEEP_CONVERSATIONS=true`。
 
-## 7. 运行 DeepEval
+## 7. 先运行黄金证据快测
+
+FinanceBench 数据集包含人工标注的 `metadata.gold_evidence`。修改召回、重排、去重或 Top-K 后，建议先运行本地确定性快测：
+
+```powershell
+cd <项目根目录>\backend
+
+.\.venv\Scripts\python.exe evals\evaluate_gold_retrieval.py `
+  --dataset evals\datasets\financebench_goldens_dev.json `
+  --limit 5
+```
+
+该脚本只执行查询 Embedding、Qdrant 向量检索、PostgreSQL 正文读取和本地黄金证据匹配，不生成聊天回答，也不调用 DeepEval Judge。需要 PostgreSQL、Qdrant、Embedding API 和 `.env` 中的 `EVAL_USERNAME`；不需要前端、后端进程、`EVAL_PASSWORD` 或 Neo4j。评测账号必须已经上传并完成相应文档的文本向量索引。
+
+报告生成在：
+
+```text
+backend/evals/results/gold-retrieval-YYYYMMDD-HHMMSS.md
+backend/evals/results/gold-retrieval-YYYYMMDD-HHMMSS.json
+```
+
+主要指标：
+
+- `Gold Evidence Hit Rate@K`：最终 Top-K 中是否至少命中一条人工标注证据。
+- `Gold Evidence Recall@K`：命中的人工标注证据数量占全部黄金证据数量的比例。
+- `First Relevant Rank`：第一条黄金证据所在排名，越小越好。
+- `MRR`：第一条黄金证据排名倒数的平均值，越接近 1 越好。
+- `Gold Evidence Coverage`：召回文本覆盖黄金证据连续词组的比例。
+
+默认覆盖率阈值为 `0.60`，可通过 `--match-threshold` 调整。不要仅为了提高分数随意降低阈值；正式对比实验应固定数据集、阈值和 Top-K。
+
+## 8. 运行 DeepEval
 
 进入后端目录：
 
 ```powershell
-cd D:\ruijie\agent\newagent\backend
+cd <项目根目录>\backend
 ```
 
 运行全部 RAG 评测：
@@ -121,11 +157,11 @@ cd D:\ruijie\agent\newagent\backend
 .\.venv-eval\Scripts\python.exe evals\summarize_results.py
 ```
 
-报告生成在 `backend/evals/results/rag-eval-latest.md`。DeepEval 的原始 JSON 位于隐藏目录 `backend/.deepeval`，主要面向程序和缓存，不建议直接阅读。
+报告默认按运行时间生成在 `backend/evals/results/rag-eval-YYYYMMDD-HHMMSS.md`，不会覆盖之前的报告。同一秒内重复生成时会自动追加 `-2`、`-3`。如需固定路径，可显式传入 `--output`。DeepEval 的原始 JSON 位于隐藏目录 `backend/.deepeval`，主要面向程序和缓存，不建议直接阅读。
 
 DeepEval 应使用 `deepeval test run`，不建议直接使用普通 `pytest` 执行评测用例。
 
-## 8. 建议评测指标
+## 9. 建议评测指标
 
 ### 检索质量
 
@@ -149,7 +185,7 @@ DeepEval 指标之外，建议同步记录：
 - P95 检索延迟
 - 单次评测 Token 消耗与费用
 
-## 9. GraphRAG 对比方式
+## 10. GraphRAG 对比方式
 
 使用同一份测试集分别运行以下配置：
 
@@ -163,20 +199,24 @@ DeepEval 指标之外，建议同步记录：
 
 建议至少准备 50 条问题；用于简历量化时建议准备 100～200 条，并单独统计事实型问题和关系型问题。
 
-## 10. 普通后端测试
+## 11. 普通后端测试
 
 DeepEval 评测与项目原有测试使用不同环境。运行原有后端测试时继续使用主环境：
 
 ```powershell
-cd D:\ruijie\agent\newagent\backend
+cd <项目根目录>\backend
 .\.venv\Scripts\python.exe -m pytest tests -q
 ```
 
-## 11. 常见问题
+## 12. 常见问题
 
 ### 找不到 `test_rag.py`
 
 确认当前目录是 `backend`，并检查 `backend/evals/test_rag.py` 是否存在。
+
+### 找不到 `evaluate_gold_retrieval.py`
+
+确认当前代码包含 `backend/evals/evaluate_gold_retrieval.py`，并从 `backend` 目录运行文档中的命令。黄金证据快测使用主环境 `.venv`，不是 `.venv-eval`。
 
 ### 提示缺少 `EVAL_USERNAME` 或 `EVAL_PASSWORD`
 
@@ -184,7 +224,7 @@ cd D:\ruijie\agent\newagent\backend
 
 ### 提示没有文档引用
 
-确认评测账号已经上传三份测试文档，并且文档状态已经变为可检索。测试会把接口返回的 `citations[].excerpt` 作为 DeepEval 的真实 `retrieval_context`；如果没有引用，说明当前问题没有召回测试文档。
+确认评测账号已经上传测试文档，并且文档状态已经变为可检索。评测请求会显式要求接口临时返回回答模型实际使用的完整 `retrieval_context`；该字段不会写入聊天历史，普通请求仍只返回引用摘要。连接尚未重启的旧版后端时，脚本才会回退到 `citations[].excerpt`，这种结果可能低估 Contextual Recall。如果没有引用，说明当前问题没有召回测试文档。
 
 ### 裁判模型请求失败
 

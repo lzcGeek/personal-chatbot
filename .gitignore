@@ -56,6 +56,10 @@ desktop.ini
 # ===== Project Data (generated at runtime) =====
 backend/data/
 backend/evals/results/
+/tmp/
+# Downloaded third-party benchmark corpus and PDFs; generated eval subsets live in backend/evals/datasets.
+/data/financebench-main/
+/data/financebench-main.zip
 
 # Local duplicate notes (canonical guide: DEEPEVAL.md)
 /deepeval测评操作手册.md

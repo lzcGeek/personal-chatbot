@@ -6,6 +6,7 @@ import KnowledgeBaseTab from './KnowledgeBaseTab.vue'
 import CharacterTab from './CharacterTab.vue'
 import MemoryTab from './MemoryTab.vue'
 import { useAuthStore } from '../stores/auth'
+import { notify } from '../notifications'
 
 
 const activeTab = ref<'characters' | 'memory' | 'knowledge' | 'mcp' | 'skills'>('characters')
@@ -13,8 +14,13 @@ const authStore = useAuthStore()
 const emit = defineEmits<{ close: [] }>()
 
 async function handleLogout(): Promise<void> {
+  if (!window.confirm('确定退出登录？当前未发送的输入内容可能会丢失。')) {
+    notify('已取消退出登录', 'info')
+    return
+  }
   emit('close')
   await authStore.logout()
+  notify('已退出登录', 'info')
 }
 </script>
 

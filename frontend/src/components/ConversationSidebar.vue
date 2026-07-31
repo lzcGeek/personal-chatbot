@@ -3,6 +3,7 @@ import { onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useConversationStore } from '../stores/conversations'
 import { useChatStore } from '../stores/chat'
+import { notify } from '../notifications'
 
 
 const convStore = useConversationStore()
@@ -23,17 +24,30 @@ function switchTo(id: string): void {
 }
 
 async function handleCreate(): Promise<void> {
-  await convStore.create()
+  if (!await convStore.create()) {
+    notify(convStore.error || '会话创建失败', 'error')
+    return
+  }
   chatStore.clearMessages()
   chatStore.loadInitial()
+  notify('新会话已创建')
 }
 
 async function handleDelete(id: string): Promise<void> {
-  await convStore.remove(id)
+  const conversation = convStore.conversations.find(item => item.id === id)
+  if (!window.confirm(`删除会话“${conversation?.title || '未命名会话'}”？其中的聊天记录也会删除，且无法撤销。`)) {
+    notify('已取消删除会话', 'info')
+    return
+  }
+  if (!await convStore.remove(id)) {
+    notify(convStore.error || '会话删除失败', 'error')
+    return
+  }
   chatStore.dropConversation(id)
   if (convStore.currentId) {
     chatStore.loadInitial()
   }
+  notify('会话已删除')
 }
 </script>
 

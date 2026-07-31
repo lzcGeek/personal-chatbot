@@ -36,49 +36,57 @@ export const useDocumentStore = defineStore('documents', () => {
     }
   }
 
-  async function upload(file: File, graphMode: GraphMode = 'inherit'): Promise<void> {
+  async function upload(file: File, graphMode: GraphMode = 'inherit'): Promise<boolean> {
     uploading.value = true
     error.value = ''
     try {
       const item = await uploadDocument(file, graphMode)
       documents.value.unshift(item)
+      return true
     } catch (reason) {
       error.value = errorMessage(reason, '上传失败')
+      return false
     } finally {
       uploading.value = false
     }
   }
 
-  async function buildGraph(id: string, rebuild = false): Promise<void> {
+  async function buildGraph(id: string, rebuild = false): Promise<boolean> {
     try {
       const updated = rebuild
         ? await rebuildDocumentGraph(id)
         : await buildDocumentGraph(id)
       replace(updated)
       error.value = ''
+      return true
     } catch (reason) {
       error.value = errorMessage(reason, rebuild ? '重建图谱失败' : '构建图谱失败')
+      return false
     }
   }
 
-  async function retry(id: string): Promise<void> {
+  async function retry(id: string): Promise<boolean> {
     try {
       const updated = await retryDocument(id)
       replace(updated)
       error.value = ''
+      return true
     } catch (reason) {
       error.value = errorMessage(reason, '重试失败')
+      return false
     }
   }
 
-  async function remove(id: string): Promise<void> {
+  async function remove(id: string): Promise<boolean> {
     try {
       await deleteDocument(id)
       const item = documents.value.find(document => document.id === id)
       if (item) item.status = 'deleting'
       error.value = ''
+      return true
     } catch (reason) {
       error.value = errorMessage(reason, '删除失败')
+      return false
     }
   }
 

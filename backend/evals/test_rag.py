@@ -23,7 +23,7 @@ from deepeval.test_case import LLMTestCase
 
 EVALS_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = EVALS_DIR.parents[1]
-DATASET_PATH = EVALS_DIR / "datasets" / "rag_goldens.json"
+DEFAULT_DATASET_PATH = EVALS_DIR / "datasets" / "rag_goldens.json"
 load_dotenv(PROJECT_ROOT / ".env")
 
 
@@ -43,10 +43,27 @@ def env_flag(name: str, default: bool = False) -> bool:
     return value.strip().lower() in {"1", "true", "yes", "on"}
 
 
+def resolve_dataset_path() -> Path:
+    configured = os.getenv("EVAL_DATASET_PATH", "").strip()
+    if not configured:
+        return DEFAULT_DATASET_PATH
+
+    path = Path(configured)
+    if not path.is_absolute():
+        path = PROJECT_ROOT / path
+    return path.resolve()
+
+
 def load_goldens() -> list[dict[str, Any]]:
-    raw = json.loads(DATASET_PATH.read_text(encoding="utf-8"))
+    dataset_path = resolve_dataset_path()
+    if not dataset_path.is_file():
+        raise RuntimeError(f"Evaluation dataset does not exist: {dataset_path}")
+
+    raw = json.loads(dataset_path.read_text(encoding="utf-8"))
     if not isinstance(raw, list) or not raw:
-        raise RuntimeError(f"Evaluation dataset must be a non-empty list: {DATASET_PATH}")
+        raise RuntimeError(
+            f"Evaluation dataset must be a non-empty list: {dataset_path}"
+        )
 
     required = {"id", "input", "expected_output", "acceptable_sources"}
     for index, item in enumerate(raw, start=1):
@@ -57,6 +74,8 @@ def load_goldens() -> list[dict[str, Any]]:
             )
 
     limit = int(os.getenv("EVAL_CASE_LIMIT", "5"))
+    if limit < 0:
+        raise RuntimeError("EVAL_CASE_LIMIT must be 0 or a positive integer.")
     return raw if limit <= 0 else raw[:limit]
 
 
@@ -69,13 +88,50 @@ JUDGE_MODEL = GPTModel(
 
 
 def build_metrics():
-    """Create fresh metric instances for each test case."""
-    return [
-        ContextualPrecisionMetric(threshold=0.7, model=JUDGE_MODEL, include_reason=True),
-        ContextualRecallMetric(threshold=0.7, model=JUDGE_MODEL, include_reason=True),
-        FaithfulnessMetric(threshold=0.8, model=JUDGE_MODEL, include_reason=True),
-        AnswerRelevancyMetric(threshold=0.7, model=JUDGE_MODEL, include_reason=True),
-    ]
+    """Create fresh metric instances for each test case.
+
+    ``fast`` is intended for frequent development feedback. ``full`` is the
+    comparable release report and remains the default. Retrieval/generation
+    profiles are useful when a failure has already been isolated to one stage.
+    """
+    profile = os.getenv("EVAL_METRIC_PROFILE", "full").strip().lower()
+    profiles = {
+        "fast": ("contextual_recall", "faithfulness"),
+        "retrieval": ("contextual_precision", "contextual_recall"),
+        "generation": ("faithfulness", "answer_relevancy"),
+        "full": (
+            "contextual_precision",
+            "contextual_recall",
+            "faithfulness",
+            "answer_relevancy",
+        ),
+    }
+    if profile not in profiles:
+        raise RuntimeError(
+            "EVAL_METRIC_PROFILE must be one of: fast, retrieval, generation, full."
+        )
+
+    include_reason_raw = os.getenv("EVAL_INCLUDE_REASON", "").strip()
+    include_reason = (
+        profile == "full"
+        if not include_reason_raw
+        else include_reason_raw.lower() in {"1", "true", "yes", "on"}
+    )
+    factories = {
+        "contextual_precision": lambda: ContextualPrecisionMetric(
+            threshold=0.7, model=JUDGE_MODEL, include_reason=include_reason
+        ),
+        "contextual_recall": lambda: ContextualRecallMetric(
+            threshold=0.7, model=JUDGE_MODEL, include_reason=include_reason
+        ),
+        "faithfulness": lambda: FaithfulnessMetric(
+            threshold=0.8, model=JUDGE_MODEL, include_reason=include_reason
+        ),
+        "answer_relevancy": lambda: AnswerRelevancyMetric(
+            threshold=0.7, model=JUDGE_MODEL, include_reason=include_reason
+        ),
+    }
+    return [factories[name]() for name in profiles[profile]]
 
 
 class NewAgentEvalClient:
@@ -100,7 +156,9 @@ class NewAgentEvalClient:
             include_csrf=False,
         )
 
-    def ask(self, question: str) -> tuple[str, list[dict[str, Any]]]:
+    def ask(
+        self, question: str
+    ) -> tuple[str, list[dict[str, Any]], list[str]]:
         conversation = self._request("POST", "/api/conversations")
         conversation_id = str(conversation["id"])
         self.created_conversations.append(conversation_id)
@@ -113,10 +171,24 @@ class NewAgentEvalClient:
                 "conversation_id": conversation_id,
                 "allow_network": False,
                 "client_request_id": str(uuid.uuid4()),
+                "include_retrieval_context": True,
             },
         )
         message = response["message"]
-        return str(message["content"]), list(message.get("citations") or [])
+        citations = list(message.get("citations") or [])
+        retrieval_context = [
+            str(item).strip()
+            for item in message.get("retrieval_context") or []
+            if str(item).strip()
+        ]
+        if not retrieval_context:
+            # Compatibility with a backend that has not been restarted yet.
+            retrieval_context = [
+                str(citation["excerpt"]).strip()
+                for citation in citations
+                if citation.get("excerpt") and str(citation["excerpt"]).strip()
+            ]
+        return str(message["content"]), citations, retrieval_context
 
     def close(self) -> None:
         if not self.keep_conversations:
@@ -176,12 +248,7 @@ def test_rag_quality(
     newagent_client: NewAgentEvalClient,
     golden: dict[str, Any],
 ) -> None:
-    actual_output, citations = newagent_client.ask(golden["input"])
-    retrieval_context = [
-        str(citation["excerpt"]).strip()
-        for citation in citations
-        if citation.get("excerpt") and str(citation["excerpt"]).strip()
-    ]
+    actual_output, citations, retrieval_context = newagent_client.ask(golden["input"])
 
     assert retrieval_context, (
         "NewAgent returned no document citations. Upload the evaluation documents, "

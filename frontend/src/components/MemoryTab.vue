@@ -15,6 +15,7 @@ import {
 } from '../api/memories'
 import { memoryActions, memoryScopeLabel, memoryValidityLabel } from '../memory-options'
 import { useConversationStore } from '../stores/conversations'
+import { errorText, notify } from '../notifications'
 
 const conversations = useConversationStore()
 const memories = ref<MemoryInfo[]>([])
@@ -44,19 +45,26 @@ async function load(): Promise<void> {
 }
 
 async function mutateMemory(item: MemoryInfo, action: string): Promise<void> {
+  if (action === 'invalidate' && !window.confirm('将这条记忆标记为失效？之后生成回复时将不再使用它。')) {
+    notify('已取消标记失效', 'info')
+    return
+  }
+  if (action === 'delete' && !window.confirm('删除这条记忆？原始聊天消息不会被删除。')) {
+    notify('已取消删除记忆', 'info')
+    return
+  }
   busyId.value = item.id
   error.value = ''
   try {
     if (action === 'confirm') await confirmMemory(item.id)
     if (action === 'invalidate') await invalidateMemory(item.id)
     if (action === 'restore') await restoreMemory(item.id)
-    if (action === 'delete') {
-      if (!window.confirm('删除这条记忆？原始聊天消息不会被删除。')) return
-      await deleteMemory(item.id)
-    }
+    if (action === 'delete') await deleteMemory(item.id)
     await load()
+    notify({ confirm: '记忆已确认', invalidate: '记忆已标记为失效', restore: '记忆已恢复', delete: '记忆已删除' }[action] || '记忆已更新')
   } catch (reason: unknown) {
-    error.value = reason instanceof Error ? reason.message : '更新记忆失败'
+    error.value = errorText(reason, '更新记忆失败')
+    notify(error.value, 'error')
   } finally {
     busyId.value = ''
   }
@@ -65,12 +73,18 @@ async function mutateMemory(item: MemoryInfo, action: string): Promise<void> {
 async function rebuild(summary: ConversationSummaryInfo): Promise<void> {
   const id = conversationId.value
   if (!id) return
+  if (!window.confirm('重新生成这个摘要检查点？当前摘要内容将被替换。')) {
+    notify('已取消重新生成摘要', 'info')
+    return
+  }
   busyId.value = summary.id
   try {
     await regenerateSummary(id, summary.id)
     await load()
+    notify('摘要已重新生成')
   } catch (reason: unknown) {
-    error.value = reason instanceof Error ? reason.message : '摘要重建失败'
+    error.value = errorText(reason, '摘要重建失败')
+    notify(error.value, 'error')
   } finally {
     busyId.value = ''
   }
@@ -78,16 +92,27 @@ async function rebuild(summary: ConversationSummaryInfo): Promise<void> {
 
 async function removeSummary(summary: ConversationSummaryInfo): Promise<void> {
   const id = conversationId.value
-  if (!id || !window.confirm('删除这个摘要检查点？原始聊天消息仍会保留。')) return
+  if (!id) return
+  if (!window.confirm('删除这个摘要检查点？原始聊天消息仍会保留。')) {
+    notify('已取消删除摘要', 'info')
+    return
+  }
   busyId.value = summary.id
   try {
     await deleteSummary(id, summary.id)
     await load()
+    notify('摘要检查点已删除')
   } catch (reason: unknown) {
-    error.value = reason instanceof Error ? reason.message : '删除摘要失败'
+    error.value = errorText(reason, '删除摘要失败')
+    notify(error.value, 'error')
   } finally {
     busyId.value = ''
   }
+}
+
+async function refresh(): Promise<void> {
+  await load()
+  notify(error.value || '记忆状态已刷新', error.value ? 'error' : 'success')
 }
 
 watch(conversationId, () => void load(), { immediate: true })
@@ -100,7 +125,7 @@ watch(conversationId, () => void load(), { immediate: true })
       <p>原始聊天消息始终保留。你可以纠正自动提取的事实，或重建覆盖较早消息的滚动摘要。</p>
     </div>
     <div class="tab-actions">
-      <button class="btn-secondary" :disabled="loading || !conversationId" @click="load">刷新</button>
+      <button class="btn-secondary" :disabled="loading || !conversationId" @click="refresh">刷新</button>
     </div>
     <p v-if="error" class="inline-error">{{ error }}</p>
     <div v-if="!conversationId" class="empty-note">请先选择一个会话。</div>

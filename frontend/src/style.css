@@ -10,6 +10,7 @@
 html, body, #app { height: 100%; margin: 0; }
 button, textarea { font: inherit; }
 button { cursor: pointer; }
+input::placeholder, textarea::placeholder { color: #93a19c; opacity: 1; }
 
 body {
   background:
@@ -141,6 +142,25 @@ body {
 .error-toast { position: absolute; z-index: 5; left: 50%; bottom: 112px; transform: translateX(-50%); max-width: calc(100% - 32px); padding: 11px 13px; border-radius: 11px; display: flex; gap: 18px; align-items: center; background: #8e3f36; color: white; box-shadow: 0 12px 30px rgba(75, 25, 20, 0.2); }
 .error-toast button { border: 0; background: transparent; color: white; text-decoration: underline; }
 
+.toast-host {
+  position: fixed; top: 18px; right: 18px; z-index: 100;
+  width: min(380px, calc(100vw - 36px)); display: grid; gap: 9px;
+  pointer-events: none;
+}
+.app-toast {
+  display: grid; grid-template-columns: 24px 1fr auto; align-items: center; gap: 9px;
+  padding: 11px 12px; border: 1px solid #cbd8d3; border-radius: 11px;
+  background: rgba(255,255,255,.97); color: #273b35;
+  box-shadow: 0 10px 28px rgba(28,52,44,.16); pointer-events: auto;
+}
+.app-toast.success { border-color: #9dccba; }
+.app-toast.error { border-color: #e2aaa3; }
+.app-toast.info { border-color: #afc7d8; }
+.toast-mark { width: 22px; height: 22px; display: grid; place-items: center; border-radius: 50%; background: #dff2e9; color: #267657; font-weight: 800; }
+.app-toast.error .toast-mark { background: #fde7e4; color: #ad4e42; }
+.app-toast.info .toast-mark { background: #e4eef5; color: #426b88; }
+.app-toast button { border: 0; background: transparent; color: #6b7b76; font-size: 19px; padding: 0 2px; }
+
 .settings-toggle { border: 0; background: transparent; font-size: 22px; cursor: pointer; padding: 4px 8px; border-radius: 8px; color: #3d5e55; }
 .settings-toggle:hover { background: #dfebe5; }
 
@@ -214,6 +234,7 @@ body {
 
 .inline-error { margin-bottom: 14px; padding: 10px 12px; border-radius: 8px; background: #fde7e4; color: #ad4e42; font-size: 13px; }
 .empty-note { color: #7a8b85; font-size: 14px; padding: 16px 0; }
+.field-help { color: #7a8b85; font-size: 11px; line-height: 1.45; }
 .visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 
 /* ── Personal knowledge base ── */

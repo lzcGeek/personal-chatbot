@@ -66,6 +66,8 @@ async def lifespan(app: FastAPI):
         api_key=settings.resolved_embedding_api_key,
         model=settings.embedding_model,
         dimension=settings.embedding_dimension,
+        request_timeout_seconds=settings.embedding_request_timeout_seconds,
+        max_retries=settings.embedding_max_retries,
     )
     app.state.llm_client = LlmClient(
         base_url=settings.openai_base_url,
@@ -141,7 +143,7 @@ async def lifespan(app: FastAPI):
         root=settings.document_storage_path,
         max_upload_bytes=settings.document_max_upload_bytes,
     )
-    app.state.document_parser = DocumentParser()
+    app.state.document_parser = DocumentParser(mode=settings.pdf_parser_mode)
     app.state.document_chunker = DocumentChunker(
         chunk_characters=settings.document_chunk_characters,
         overlap_characters=settings.document_chunk_overlap_characters,
@@ -163,6 +165,9 @@ async def lifespan(app: FastAPI):
         poll_seconds=settings.document_worker_poll_seconds,
         max_attempts=settings.document_worker_max_attempts,
         graph_concurrency=settings.graph_index_concurrency,
+        core_concurrency=settings.document_worker_concurrency,
+        embedding_batch_size=settings.document_embedding_batch_size,
+        embedding_concurrency=settings.document_embedding_concurrency,
     )
     app.state.document_worker.start()
     app.state.memory_service = MemoryService(
@@ -179,6 +184,7 @@ async def lifespan(app: FastAPI):
         graph_store=app.state.graph_store,
         result_limit=settings.document_result_limit,
         relevance_threshold=settings.document_relevance_threshold,
+        vector_candidate_limit=settings.document_vector_candidate_limit,
     )
     app.state.vector_worker = VectorIndexWorker(
         session_factory=SessionLocal,

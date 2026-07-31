@@ -1,10 +1,27 @@
 import uuid
+from collections.abc import Sequence
+from dataclasses import dataclass
 
 from qdrant_client import AsyncQdrantClient, models
 
 
+@dataclass(frozen=True)
+class DocumentVectorPoint:
+    chunk_id: uuid.UUID
+    document_id: uuid.UUID
+    user_id: uuid.UUID
+    revision: int
+    vector: list[float]
+    page_number: int | None
+    section: str | None
+
+
 class DocumentVectorStore:
-    def __init__(self, client: AsyncQdrantClient, collection_name: str) -> None:
+    def __init__(
+        self,
+        client: AsyncQdrantClient,
+        collection_name: str,
+    ) -> None:
         self.client = client
         self.collection_name = collection_name
 
@@ -18,22 +35,39 @@ class DocumentVectorStore:
         page_number: int | None,
         section: str | None,
     ) -> None:
+        await self.upsert_batch(
+            [
+                DocumentVectorPoint(
+                    chunk_id=chunk_id,
+                    document_id=document_id,
+                    user_id=user_id,
+                    revision=revision,
+                    vector=vector,
+                    page_number=page_number,
+                    section=section,
+                )
+            ]
+        )
+
+    async def upsert_batch(self, items: Sequence[DocumentVectorPoint]) -> None:
+        if not items:
+            return
         await self.client.upsert(
             collection_name=self.collection_name,
             wait=True,
             points=[
                 models.PointStruct(
-                    id=str(chunk_id),
-                    vector=vector,
+                    id=str(item.chunk_id),
+                    vector=item.vector,
                     payload={
-                        "chunk_id": str(chunk_id),
-                        "document_id": str(document_id),
-                        "user_id": str(user_id),
-                        "revision": revision,
-                        "page_number": page_number,
-                        "section": section,
+                        "chunk_id": str(item.chunk_id),
+                        "document_id": str(item.document_id),
+                        "user_id": str(item.user_id),
+                        "revision": item.revision,
+                        "page_number": item.page_number,
+                        "section": item.section,
                     },
-                )
+                ) for item in items
             ],
         )
 

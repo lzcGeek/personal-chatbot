@@ -198,6 +198,10 @@ class ContextBuilder:
                         "section": item["section"],
                         "score": round(item["score"], 6),
                         "excerpt": item["context_text"][:1000],
+                        # Internal request-scoped trace. ChatService removes it
+                        # before persistence and only exposes it when an API
+                        # caller explicitly requests evaluation context.
+                        "_retrieval_context": item["context_text"],
                     }
                 )
             prompt_sections.append((

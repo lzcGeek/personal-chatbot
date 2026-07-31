@@ -9,12 +9,16 @@
 - 业务数据与账号：PostgreSQL
 - 向量索引：Qdrant
 - 知识图谱：Neo4j
-- 文档处理：PDF / DOCX / TXT / Markdown 解析、结构分块、异步索引与来源引用
+- 文档处理：PDF / DOCX / TXT / Markdown 解析、PDF Layout 与表格结构提取、结构分块、异步索引与来源引用
 - 登录：服务端不透明 Cookie Session
 - 密码：Argon2id 单向哈希（Base64 不是密码加密方案）
 - 数据库版本：Alembic
 
 所有会话、消息、文档、向量和图谱查询都按 `user_id` 隔离。PostgreSQL 是业务与文档正文的事实来源，Qdrant 保存可重建的向量索引，Neo4j 保存带来源的实体和事实；后台通过 outbox 执行可重试索引与完整删除。
+
+文档索引会先按页合并过短段落，再批量请求 Embedding 并批量写入 Qdrant。核心 Worker 默认可同时处理 2 份文档，Embedding 默认每批 8 个 Chunk、全局最多 4 个请求并发；可通过 `DOCUMENT_WORKER_CONCURRENCY`、`DOCUMENT_EMBEDDING_BATCH_SIZE` 和 `DOCUMENT_EMBEDDING_CONCURRENCY` 调整。并发过高可能触发上游 API 的 429 限流，建议逐级增加并观察失败重试率；若供应商返回批量上限错误，Worker 会自动拆分批次后继续。
+
+PDF 默认使用 `PDF_PARSER_MODE=auto`：无表格页面由 pypdf Layout 保留阅读布局；检测到表格时由 pdfplumber 提取行列、表头、页码和坐标，并从普通正文中排除表格字符以避免重复。表格转换成 Markdown，超过 Chunk 上限时按行切分并在每个子块重复表头。单页表格解析失败会自动退回 pypdf Layout；设置 `PDF_PARSER_MODE=layout` 可关闭表格提取。修改解析模式或切块逻辑不会自动更新旧索引，已有文档需要删除后重新上传。
 
 完整设计、安全边界和故障恢复说明见 `MULTI_USER_REFACTOR.md`，规范变更位于 `openspec/changes/multi-user-postgres-qdrant-auth/`。
 
@@ -145,6 +149,8 @@ npm run dev
 - 向量 + 图谱：融合两者；Neo4j 故障时降级使用向量结果。
 
 “文本可检索”和“图谱增强完成”是两个独立状态。图谱失败不表示整个文档不可用。
+
+文本检索采用两阶段 Top-K：`DOCUMENT_VECTOR_CANDIDATE_LIMIT` 控制 Qdrant 粗召回候选数（默认 30），候选经过重排和去重后，由 `DOCUMENT_RESULT_LIMIT` 控制最终提供给模型的证据数（默认 6）。调整这两个查询参数后只需重启后端，不需要重新上传或向量化文档；未启用 Neo4j 时不会执行图谱路由和图谱查询。
 
 ### 8. “联网”到底是什么意思
 

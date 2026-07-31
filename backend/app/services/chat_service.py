@@ -408,6 +408,9 @@ class ChatService:
         plan_id: uuid.UUID,
         plan_index: int,
     ) -> ChatMessage:
+        persisted_citations, retrieval_context = self._split_retrieval_context(
+            citations
+        )
         async with self.session_factory() as session:
             async with session.begin():
                 existing = await session.scalar(
@@ -425,7 +428,7 @@ class ChatService:
                     role="assistant",
                     content=content,
                     status="complete",
-                    citations=citations,
+                    citations=persisted_citations,
                     conversation_id=conversation_id,
                     character_id=speaker.id,
                     speaker_name=speaker.name,
@@ -436,6 +439,7 @@ class ChatService:
                 plan.current_index = plan_index + 1
                 plan.status = "running"
             await session.refresh(message)
+            message._retrieval_context = retrieval_context
             return message
 
     async def _update_group_plan(self, plan_id: uuid.UUID, **values: Any) -> None:
@@ -1043,12 +1047,15 @@ class ChatService:
         citations: list[dict[str, Any]],
         speaker: Character | None = None,
     ) -> ChatMessage:
+        persisted_citations, retrieval_context = self._split_retrieval_context(
+            citations
+        )
         async with self.session_factory() as session:
             message = ChatMessage(
                 role="assistant",
                 content=content,
                 status=status,
-                citations=citations,
+                citations=persisted_citations,
                 conversation_id=conversation_id,
                 character_id=speaker.id if speaker is not None else None,
                 speaker_name=speaker.name if speaker is not None else None,
@@ -1056,7 +1063,23 @@ class ChatService:
             session.add(message)
             await session.commit()
             await session.refresh(message)
+            message._retrieval_context = retrieval_context
             return message
+
+    @staticmethod
+    def _split_retrieval_context(
+        citations: list[dict[str, Any]],
+    ) -> tuple[list[dict[str, Any]], list[str]]:
+        """Separate the full request trace from citations stored in JSONB."""
+        persisted: list[dict[str, Any]] = []
+        retrieval_context: list[str] = []
+        for citation in citations:
+            public_citation = dict(citation)
+            full_context = public_citation.pop("_retrieval_context", None)
+            persisted.append(public_citation)
+            if full_context is not None and str(full_context).strip():
+                retrieval_context.append(str(full_context))
+        return persisted, retrieval_context
 
     async def _execute_tool_call(
         self,
@@ -1202,7 +1225,11 @@ class ChatService:
         return int((time.monotonic() - started) * 1000)
 
     @staticmethod
-    def serialize_message(message: ChatMessage) -> dict[str, Any]:
+    def serialize_message(
+        message: ChatMessage,
+        *,
+        include_retrieval_context: bool = False,
+    ) -> dict[str, Any]:
         serialized = {
             "id": message.id,
             "role": message.role,
@@ -1226,4 +1253,8 @@ class ChatService:
         if speaker_plan_id is not None:
             serialized["speaker_plan_id"] = str(speaker_plan_id)
             serialized["speaker_plan_index"] = speaker_plan_index
+        if include_retrieval_context:
+            serialized["retrieval_context"] = list(
+                getattr(message, "_retrieval_context", [])
+            )
         return serialized

@@ -15,15 +15,16 @@
 
 1. API 验证 Cookie Session、扩展名、MIME 和大小。
 2. 原文件落盘并计算 SHA-256；PostgreSQL 同一事务写入 Document 和 outbox。上传可选择 `inherit`、`enabled` 或 `disabled` 图谱模式；disabled 仍继续文本与向量索引。
-3. Worker 解析页码或章节，进行结构分块和相邻句窗口扩展。
-4. 片段正文写入 PostgreSQL，embedding 写入 Qdrant；完成后立即提交并将文档标记为文本可检索。
+3. Worker 解析页码或章节；PDF 自动模式使用 pypdf Layout 提取正文，并用 pdfplumber 将检测到的表格转换为带表头、行列、页码和坐标元数据的 Markdown，单页失败时降级为 Layout 文本。
+4. 普通文本合并短段落后按边界切分；表格按行分块并在每个子块重复表头，然后统一进行相邻上下文窗口扩展。片段正文写入 PostgreSQL，embedding 写入 Qdrant；完成后立即提交并将文档标记为文本可检索。
+   Embedding 与 Qdrant 均按批处理；多个核心 Worker 可并行领取不同文档，但通过全局并发上限保护上游 API。
 5. 同一事务写入独立的 `index_graph` outbox，图谱 Worker 以受限并发从片段中抽取显式实体与事实，再保存置信度和原文到 Neo4j。
 6. 图谱任务拥有独立的排队、处理、失败和重试状态；失败只降低增强能力，可在界面重试，不阻塞文本 RAG、其他文档或删除任务。
 
 ## 查询流程
 
 1. 当前用户的问题生成 embedding。
-2. Qdrant 必须按 `user_id` 过滤；候选 chunk ID 回 PostgreSQL 再做所有权和文档状态校验。
+2. Qdrant 必须按 `user_id` 过滤；默认先召回 `DOCUMENT_VECTOR_CANDIDATE_LIMIT=30` 个候选 chunk ID，回 PostgreSQL 再做所有权和文档状态校验。候选经过词项覆盖重排、同一 chunk 精确去重和相邻上下文重叠去重后，最终只保留 `DOCUMENT_RESULT_LIMIT=6` 条证据。未配置 Neo4j 时不会执行图谱路由或图谱查询。
 3. 会话可选择 `auto`、`off`、`vector` 或 `hybrid` 检索模式；关系型问题在允许图检索时提高图谱证据权重。Neo4j 路径检索同样强制按 `user_id` 限制，并限制路径深度。
 4. 文本窗口和图事实按相关度、置信度与查询类型融合、去重和重排。
 5. 证据以 `<document-evidence>` 边界注入，明确视为不可信资料，不能覆盖系统指令或触发工具。

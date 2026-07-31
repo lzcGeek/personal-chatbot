@@ -42,20 +42,23 @@ export const useConversationStore = defineStore('conversations', () => {
     currentId.value = id
   }
 
-  async function create(): Promise<void> {
+  async function create(): Promise<boolean> {
     loading.value = true
     try {
       const conv = await createConversation()
       conversations.value.unshift(conv)
       currentId.value = conv.id
+      error.value = ''
+      return true
     } catch (reason: unknown) {
       error.value = reason instanceof Error ? reason.message : '创建失败'
+      return false
     } finally {
       loading.value = false
     }
   }
 
-  async function remove(id: string): Promise<void> {
+  async function remove(id: string): Promise<boolean> {
     loading.value = true
     try {
       await deleteConversation(id)
@@ -69,8 +72,11 @@ export const useConversationStore = defineStore('conversations', () => {
           currentId.value = conversations.value[0].id
         }
       }
+      error.value = ''
+      return true
     } catch (reason: unknown) {
       error.value = reason instanceof Error ? reason.message : '删除失败'
+      return false
     } finally {
       loading.value = false
     }

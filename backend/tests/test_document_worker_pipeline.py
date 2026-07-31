@@ -36,6 +36,169 @@ def make_worker(*, extractor=None, concurrency=2) -> DocumentIndexWorker:
     )
 
 
+class ConcurrentBatchEmbedding:
+    def __init__(self) -> None:
+        self.active = 0
+        self.max_active = 0
+        self.batch_sizes: list[int] = []
+        self.texts: list[str] = []
+
+    async def embed_batch(self, texts):
+        self.active += 1
+        self.max_active = max(self.max_active, self.active)
+        self.batch_sizes.append(len(texts))
+        self.texts.extend(texts)
+        await asyncio.sleep(0.01)
+        self.active -= 1
+        return [[float(len(text))] for text in texts]
+
+
+class BatchVectorStore:
+    def __init__(self) -> None:
+        self.items = []
+        self.batch_sizes: list[int] = []
+
+    async def upsert_batch(self, items):
+        self.items.extend(items)
+        self.batch_sizes.append(len(items))
+
+
+@pytest.mark.asyncio
+async def test_document_embeddings_are_batched_with_bounded_concurrency() -> None:
+    embedding = ConcurrentBatchEmbedding()
+    vector_store = BatchVectorStore()
+    worker = DocumentIndexWorker(
+        session_factory=None,  # type: ignore[arg-type]
+        storage=None,  # type: ignore[arg-type]
+        parser=None,  # type: ignore[arg-type]
+        chunker=None,  # type: ignore[arg-type]
+        embedding_service=embedding,  # type: ignore[arg-type]
+        vector_store=vector_store,  # type: ignore[arg-type]
+        graph_store=None,
+        graph_extractor=None,
+        poll_seconds=1,
+        max_attempts=3,
+        embedding_batch_size=3,
+        embedding_concurrency=2,
+    )
+    document_id = uuid.uuid4()
+    user_id = uuid.uuid4()
+    event = ClaimedEvent(
+        id=1,
+        document_id=document_id,
+        user_id=user_id,
+        operation="process_document",
+        revision=2,
+    )
+    chunks = [
+        DocumentChunk(
+            id=uuid.uuid4(),
+            document_id=document_id,
+            user_id=user_id,
+            ordinal=index,
+            content=f"chunk-{index}",
+            context_text=f"context-{index}",
+        )
+        for index in range(10)
+    ]
+
+    await worker._embed_and_store_chunks(event, chunks)  # noqa: SLF001
+
+    assert sorted(embedding.batch_sizes) == [1, 3, 3, 3]
+    assert embedding.max_active == 2
+    assert sorted(vector_store.batch_sizes) == [1, 3, 3, 3]
+    assert {item.chunk_id for item in vector_store.items} == {chunk.id for chunk in chunks}
+    assert set(embedding.texts) == {f"context-{index}" for index in range(10)}
+
+
+class LimitedBatchEmbedding:
+    def __init__(self, maximum: int) -> None:
+        self.maximum = maximum
+        self.batch_sizes: list[int] = []
+
+    async def embed_batch(self, texts):
+        self.batch_sizes.append(len(texts))
+        if len(texts) > self.maximum:
+            raise RuntimeError(
+                "batch size is invalid, it should not be larger than "
+                f"{self.maximum}"
+            )
+        return [[float(len(text))] for text in texts]
+
+
+@pytest.mark.asyncio
+async def test_embedding_batch_limit_error_is_split_and_retried() -> None:
+    embedding = LimitedBatchEmbedding(maximum=2)
+    vector_store = BatchVectorStore()
+    worker = DocumentIndexWorker(
+        session_factory=None,  # type: ignore[arg-type]
+        storage=None,  # type: ignore[arg-type]
+        parser=None,  # type: ignore[arg-type]
+        chunker=None,  # type: ignore[arg-type]
+        embedding_service=embedding,  # type: ignore[arg-type]
+        vector_store=vector_store,  # type: ignore[arg-type]
+        graph_store=None,
+        graph_extractor=None,
+        poll_seconds=1,
+        max_attempts=3,
+        embedding_batch_size=4,
+        embedding_concurrency=1,
+    )
+    document_id = uuid.uuid4()
+    user_id = uuid.uuid4()
+    event = ClaimedEvent(1, document_id, user_id, "process_document", 1)
+    chunks = [
+        DocumentChunk(
+            id=uuid.uuid4(),
+            document_id=document_id,
+            user_id=user_id,
+            ordinal=index,
+            content=f"chunk-{index}",
+            context_text=f"chunk-{index}",
+        )
+        for index in range(4)
+    ]
+
+    await worker._embed_and_store_chunks(event, chunks)  # noqa: SLF001
+
+    assert embedding.batch_sizes == [4, 2, 2]
+    assert len(vector_store.items) == 4
+
+
+class IdleWorker(DocumentIndexWorker):
+    async def _run(self, operations, *, recover=True):
+        await asyncio.Event().wait()
+
+
+@pytest.mark.asyncio
+async def test_document_worker_starts_multiple_core_consumers() -> None:
+    worker = IdleWorker(
+        session_factory=None,  # type: ignore[arg-type]
+        storage=None,  # type: ignore[arg-type]
+        parser=None,  # type: ignore[arg-type]
+        chunker=None,  # type: ignore[arg-type]
+        embedding_service=None,  # type: ignore[arg-type]
+        vector_store=None,  # type: ignore[arg-type]
+        graph_store=None,
+        graph_extractor=None,
+        poll_seconds=1,
+        max_attempts=3,
+        core_concurrency=3,
+    )
+
+    worker.start()
+    try:
+        names = {task.get_name() for task in worker._tasks}  # noqa: SLF001
+        assert names == {
+            "document-core-worker-1",
+            "document-core-worker-2",
+            "document-core-worker-3",
+            "document-graph-worker",
+        }
+    finally:
+        await worker.close()
+
+
 def test_graph_disposition_respects_document_mode_and_service_availability() -> None:
     disabled_worker = make_worker()
     assert disabled_worker._graph_disposition("disabled") == "skipped"  # noqa: SLF001

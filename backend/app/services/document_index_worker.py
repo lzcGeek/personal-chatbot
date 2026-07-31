@@ -15,7 +15,7 @@ from app.models.document_outbox import DocumentOutbox
 from app.services.document_chunker import DocumentChunker
 from app.services.document_parser import DocumentParser
 from app.services.document_storage import DocumentStorage
-from app.services.document_vector_store import DocumentVectorStore
+from app.services.document_vector_store import DocumentVectorPoint, DocumentVectorStore
 from app.services.embedding_service import EmbeddingService
 from app.services.graph_extractor import GraphExtractor
 from app.services.graph_store import GraphStore
@@ -50,6 +50,9 @@ class DocumentIndexWorker:
         poll_seconds: float,
         max_attempts: int,
         graph_concurrency: int = 4,
+        core_concurrency: int = 2,
+        embedding_batch_size: int = 32,
+        embedding_concurrency: int = 4,
     ) -> None:
         self.session_factory = session_factory
         self.storage = storage
@@ -62,6 +65,10 @@ class DocumentIndexWorker:
         self.poll_seconds = poll_seconds
         self.max_attempts = max_attempts
         self.graph_concurrency = graph_concurrency
+        self.core_concurrency = max(1, core_concurrency)
+        self.embedding_batch_size = max(1, embedding_batch_size)
+        self.embedding_concurrency = max(1, embedding_concurrency)
+        self._embedding_semaphore = asyncio.Semaphore(self.embedding_concurrency)
         self._tasks: list[asyncio.Task[None]] = []
         self._document_locks: dict[uuid.UUID, asyncio.Lock] = {}
 
@@ -70,12 +77,16 @@ class DocumentIndexWorker:
             return
         self._tasks = [
             asyncio.create_task(
-                self._run(CORE_OPERATIONS), name="document-core-worker"
-            ),
+                self._run(CORE_OPERATIONS, recover=index == 0),
+                name=f"document-core-worker-{index + 1}",
+            )
+            for index in range(self.core_concurrency)
+        ]
+        self._tasks.append(
             asyncio.create_task(
                 self._run(GRAPH_OPERATIONS), name="document-graph-worker"
-            ),
-        ]
+            )
+        )
 
     async def close(self) -> None:
         for task in self._tasks:
@@ -84,8 +95,11 @@ class DocumentIndexWorker:
             await asyncio.gather(*self._tasks, return_exceptions=True)
         self._tasks = []
 
-    async def _run(self, operations: tuple[str, ...]) -> None:
-        await self._recover_interrupted(operations)
+    async def _run(
+        self, operations: tuple[str, ...], *, recover: bool = True
+    ) -> None:
+        if recover:
+            await self._recover_interrupted(operations)
         while True:
             try:
                 processed = await self._process_one(operations)
@@ -214,17 +228,7 @@ class DocumentIndexWorker:
                     current.processing_phase = "embedding"
                     current.error_message = None
 
-            for chunk in chunks:
-                vector = await self.embedding_service.embed(chunk.content)
-                await self.vector_store.upsert(
-                    chunk.id,
-                    event.document_id,
-                    event.user_id,
-                    event.revision,
-                    vector,
-                    chunk.page_number,
-                    chunk.section,
-                )
+            await self._embed_and_store_chunks(event, chunks)
 
             async with self.session_factory() as session:
                 async with session.begin():
@@ -263,6 +267,60 @@ class DocumentIndexWorker:
                                     revision=event.revision,
                                 )
                             )
+
+    async def _embed_and_store_chunks(
+        self, event: ClaimedEvent, chunks: list[DocumentChunk]
+    ) -> None:
+        batches = [
+            chunks[index : index + self.embedding_batch_size]
+            for index in range(0, len(chunks), self.embedding_batch_size)
+        ]
+
+        async def process_batch(batch: list[DocumentChunk]) -> None:
+            try:
+                async with self._embedding_semaphore:
+                    # Retrieval returns context_text, so index the same evidence
+                    # window instead of embedding only the center chunk.
+                    contents = [chunk.context_text for chunk in batch]
+                    vectors = await self.embedding_service.embed_batch(contents)
+            except Exception as exc:
+                if len(batch) <= 1 or not self._is_embedding_batch_size_error(exc):
+                    raise
+                midpoint = len(batch) // 2
+                await process_batch(batch[:midpoint])
+                await process_batch(batch[midpoint:])
+                return
+            await self.vector_store.upsert_batch(
+                [
+                    DocumentVectorPoint(
+                        chunk_id=chunk.id,
+                        document_id=event.document_id,
+                        user_id=event.user_id,
+                        revision=event.revision,
+                        vector=vector,
+                        page_number=chunk.page_number,
+                        section=chunk.section,
+                    )
+                    for chunk, vector in zip(batch, vectors, strict=True)
+                ]
+            )
+
+        tasks = [asyncio.create_task(process_batch(batch)) for batch in batches]
+        try:
+            await asyncio.gather(*tasks)
+        except BaseException:
+            for task in tasks:
+                if not task.done():
+                    task.cancel()
+            await asyncio.gather(*tasks, return_exceptions=True)
+            raise
+
+    @staticmethod
+    def _is_embedding_batch_size_error(exc: Exception) -> bool:
+        message = str(exc).lower()
+        return "batch size" in message and (
+            "invalid" in message or "larger than" in message or "maximum" in message
+        )
 
     async def _index_graph(self, event: ClaimedEvent) -> None:
         if self.graph_store is None or self.graph_extractor is None:

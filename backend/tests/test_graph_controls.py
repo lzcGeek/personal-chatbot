@@ -19,6 +19,7 @@ def test_legacy_defaults_and_chat_payload_remain_compatible() -> None:
 
     assert request.allow_network is False
     assert request.client_request_id is None
+    assert request.include_retrieval_context is False
     assert Conversation.__table__.c.retrieval_mode.default.arg == "auto"
     assert Document.__table__.c.graph_mode.default.arg == "inherit"
 
@@ -50,17 +51,62 @@ def test_legacy_history_message_shape_remains_unchanged() -> None:
     }
 
 
+def test_full_retrieval_context_is_transient_and_opt_in() -> None:
+    full_context = "表格上下文" * 500
+    citations = [
+        {
+            "chunk_id": str(uuid.uuid4()),
+            "excerpt": full_context[:1000],
+            "_retrieval_context": full_context,
+        }
+    ]
+
+    persisted, retrieval_context = ChatService._split_retrieval_context(citations)
+    assert persisted == [
+        {"chunk_id": citations[0]["chunk_id"], "excerpt": full_context[:1000]}
+    ]
+    assert retrieval_context == [full_context]
+    assert "_retrieval_context" in citations[0]
+
+    created_at = datetime.now(timezone.utc)
+    message = SimpleNamespace(
+        id=1,
+        role="assistant",
+        content="answer",
+        status="complete",
+        citations=persisted,
+        allow_network=False,
+        client_request_id=None,
+        created_at=created_at,
+        _retrieval_context=retrieval_context,
+    )
+    normal = ChatService.serialize_message(message)  # type: ignore[arg-type]
+    traced = ChatService.serialize_message(  # type: ignore[arg-type]
+        message, include_retrieval_context=True
+    )
+
+    assert "retrieval_context" not in normal
+    assert traced["retrieval_context"] == [full_context]
+    assert traced["citations"] == persisted
+
+
 class FakeEmbedding:
     def __init__(self) -> None:
         self.calls = 0
+        self.last_text = None
 
     async def embed(self, text: str):
         self.calls += 1
+        self.last_text = text
         return [0.1]
 
 
 class FakeVectorStore:
+    def __init__(self) -> None:
+        self.last_limit = None
+
     async def search(self, **kwargs):
+        self.last_limit = kwargs["limit"]
         return []
 
 
@@ -81,13 +127,15 @@ class UnusedSession:
 @pytest.mark.asyncio
 async def test_document_retrieval_modes_skip_disabled_services_and_report_degradation() -> None:
     embedding = FakeEmbedding()
+    vector_store = FakeVectorStore()
     graph = FailingGraphStore()
     service = DocumentKnowledgeService(
         embedding_service=embedding,  # type: ignore[arg-type]
-        vector_store=FakeVectorStore(),  # type: ignore[arg-type]
+        vector_store=vector_store,  # type: ignore[arg-type]
         graph_store=graph,  # type: ignore[arg-type]
         result_limit=5,
         relevance_threshold=0.5,
+        vector_candidate_limit=30,
     )
     user_id = uuid.uuid4()
 
@@ -95,6 +143,7 @@ async def test_document_retrieval_modes_skip_disabled_services_and_report_degrad
     assert embedding.calls == 0
     assert await service.search(UnusedSession(), "query", user_id, "vector") == []  # type: ignore[arg-type]
     assert embedding.calls == 1
+    assert vector_store.last_limit == 30
     assert graph.calls == 0
 
     degradations: list[str] = []
@@ -103,6 +152,132 @@ async def test_document_retrieval_modes_skip_disabled_services_and_report_degrad
     ) == []
     assert graph.calls == 1
     assert "document_graph_retrieval_failed" in degradations
+
+
+@pytest.mark.asyncio
+async def test_document_retrieval_strips_only_trailing_answer_instruction() -> None:
+    embedding = FakeEmbedding()
+    service = DocumentKnowledgeService(
+        embedding_service=embedding,  # type: ignore[arg-type]
+        vector_store=FakeVectorStore(),  # type: ignore[arg-type]
+        graph_store=None,
+        result_limit=6,
+        relevance_threshold=0.5,
+        vector_candidate_limit=30,
+    )
+    main_question = "Has the ratio improved between FY2023 and FY2022?"
+    full_question = (
+        main_question
+        + " If this is not a useful metric, then state that and explain why."
+    )
+
+    await service.search(  # type: ignore[arg-type]
+        UnusedSession(), full_question, uuid.uuid4(), "vector"
+    )
+
+    assert embedding.last_text == main_question
+    assert DocumentKnowledgeService._retrieval_query(
+        "What failed? Which retry eventually succeeded?"
+    ) == "What failed? Which retry eventually succeeded?"
+
+
+def test_english_stop_terms_do_not_inflate_lexical_coverage() -> None:
+    terms = DocumentKnowledgeService._lexical_terms(
+        "Has AMCOR's quick ratio improved or declined between FY2023 and FY2022?"
+    )
+
+    assert terms == {
+        "amcor", "quick", "ratio", "improved", "declined", "2023", "2022"
+    }
+    query_terms = DocumentKnowledgeService._query_lexical_terms(
+        "Has AMCOR's quick ratio improved or declined between FY2023 and FY2022?"
+    )
+    assert query_terms == {"amcor", "quick", "ratio", "2023", "2022"}
+
+
+def test_retrieval_query_expands_derived_metrics_and_acquisitions() -> None:
+    ratio = DocumentKnowledgeService._expand_retrieval_query(
+        "Has AMCOR's quick ratio improved between FY2023 and FY2022?"
+    )
+    acquisitions = DocumentKnowledgeService._expand_retrieval_query(
+        "What acquisitions did AMCOR complete?"
+    )
+
+    assert "cash equivalents" in ratio
+    assert "trade receivables" in ratio
+    assert "current liabilities" in ratio
+    assert "purchase consideration" in acquisitions
+    assert "acquisitions and divestitures" in acquisitions
+    assert "equity interest" in acquisitions
+
+
+def test_filename_match_is_weaker_than_body_match() -> None:
+    query = "What acquisitions did AMCOR complete?"
+    filename_only = {
+        "filename": "AMCOR_acquisitions.pdf",
+        "section": None,
+        "content": "General company overview.",
+        "context_text": "General company overview.",
+    }
+    body_match = {
+        "filename": "AMCOR.pdf",
+        "section": "Acquisitions",
+        "content": "The company completed an acquisition.",
+        "context_text": "Purchase consideration for the acquired business.",
+    }
+
+    assert DocumentKnowledgeService._lexical_relevance(
+        query, body_match
+    ) > DocumentKnowledgeService._lexical_relevance(query, filename_only)
+
+
+@pytest.mark.asyncio
+async def test_missing_graph_store_skips_graph_routing_entirely() -> None:
+    class VectorOnlyService(DocumentKnowledgeService):
+        def _route_query(self, query: str) -> tuple[int, float]:
+            raise AssertionError("graph routing must not run without a graph store")
+
+    service = VectorOnlyService(
+        embedding_service=FakeEmbedding(),  # type: ignore[arg-type]
+        vector_store=FakeVectorStore(),  # type: ignore[arg-type]
+        graph_store=None,
+        result_limit=6,
+        relevance_threshold=0.5,
+        vector_candidate_limit=30,
+    )
+
+    assert await service.search(  # type: ignore[arg-type]
+        UnusedSession(), "普通文本问题", uuid.uuid4(), "auto"
+    ) == []
+
+
+def test_document_dedup_detects_only_nearby_overlapping_contexts() -> None:
+    base = {
+        "document_id": "document-a",
+        "chunk_id": "chunk-10",
+        "chunk_ordinal": 10,
+        "page_number": 5,
+        "context_text": "alpha beta gamma delta epsilon",
+    }
+    nearby_overlap = {
+        **base,
+        "chunk_id": "chunk-11",
+        "chunk_ordinal": 11,
+        "context_text": "alpha beta gamma delta epsilon",
+    }
+    distant_overlap = {
+        **nearby_overlap,
+        "chunk_id": "chunk-30",
+        "chunk_ordinal": 30,
+    }
+    other_document = {
+        **nearby_overlap,
+        "document_id": "document-b",
+    }
+
+    assert DocumentKnowledgeService._is_near_duplicate(nearby_overlap, [base]) is True
+    assert DocumentKnowledgeService._is_near_duplicate(distant_overlap, [base]) is False
+    assert DocumentKnowledgeService._is_near_duplicate(other_document, [base]) is False
 
 
 def test_document_rerank_prefers_specific_lexical_evidence() -> None:
@@ -139,6 +314,17 @@ def test_document_rerank_prefers_specific_lexical_evidence() -> None:
     assert DocumentKnowledgeService._lexical_relevance(
         indexing_query, indexing
     ) > DocumentKnowledgeService._lexical_relevance(indexing_query, isolation)
+
+    service = DocumentKnowledgeService(
+        embedding_service=None,  # type: ignore[arg-type]
+        vector_store=None,  # type: ignore[arg-type]
+        graph_store=None,
+        result_limit=6,
+        relevance_threshold=0.45,
+    )
+    assert service._ranking_score(formats_query, {**formats, "evidence_type": "text", "score": 0.5}) > service._ranking_score(
+        formats_query, {**generic, "evidence_type": "text", "score": 0.5}
+    )
 
 
 def test_graph_weight_is_high_only_for_explicit_relationship_queries() -> None:

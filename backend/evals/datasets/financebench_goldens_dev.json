@@ -1,0 +1,462 @@
+[
+  {
+    "id": "financebench_id_00799",
+    "input": "Has AMCOR's quick ratio improved or declined between FY2023 and FY2022? If the quick ratio is not something that a financial analyst would ask about a company like this, then state that and explain why.",
+    "expected_output": "The quick ratio has slightly improved from 0.67 times to 0.69 times between FY 2023 and FY 2022.(3.4% jump)",
+    "acceptable_sources": [
+      "AMCOR_2023_10K.pdf"
+    ],
+    "metadata": {
+      "benchmark": "FinanceBench OPEN_SOURCE",
+      "split": "dev",
+      "company": "Amcor",
+      "doc_name": "AMCOR_2023_10K",
+      "question_type": "domain-relevant",
+      "question_reasoning": "Numerical reasoning OR Logical reasoning",
+      "domain_question_num": "dg02",
+      "justification": "Quick Ratio= (Total current assets-(Raw materials and supplies+Work in process and finished goods))/Total current liabilities\n(5308-992-1221)/4476\n(5853-1114-1325)/5103",
+      "gold_evidence": [
+        {
+          "source": "AMCOR_2023_10K.pdf",
+          "page_index": 51,
+          "excerpt": "Amcor plc and Subsidiaries Consolidated Balance Sheets ($ in millions, except share and per share data) As of June 30, 2023 2022 Assets Current assets: Cash and cash equivalents $ 689 $ 775 Trade receivables, net of allowance for credit losses of $21 and $25, respectively 1,875 1,935 Inventories, net Raw materials and supplies 992 1,114 Work in process and finished goods 1,221 1,325 Prepaid expenses and other current assets 531 512 Assets held for sale, net 192 Total current assets 5,308 5,853 Non-current assets: Property, plant, and equipment, net 3,762 3,646 Operating lease assets 533 560 Deferred tax assets 134 130 Other intangible assets, net 1,524 1,657 Goodwill 5,366 5,285 Employee benefit assets 67 89 Other non-current assets 309 206 Total non-current assets 11,695 11,573 Total assets $ 17,003 $ 17,426 Liabilities Current liabilities: Current portion of long-term debt $ 13 $ 14 Short-term debt 80 136 Trade payables 2,690 3,073 Accrued employee costs 396 471 Other current liabilities 1,297 1,344 Liabilities held for sale 65 Total current liabilities 4,476 5,103 Non-current liabilities: Long-term debt, less current portion 6,653 6,340 Operating lease liabilities 463 493 Deferred tax liabilities 616 677 Employee benefit obligations 224 201 Other non-current liabilities 481 471 Total non-current liabilities 8,437 8,182 Total liabilities $ 12,913 $ 13,285 Commitments and contingencies (See Note 20) Shareholders' Equity Amcor plc shareholders equity: Ordinary shares ($0.01 par value): Authorized (9,000 million shares) Issued (1,448 and 1,489 million shares, respectively) $ 14 $ 15 Additional paid-in capital 4,021 4,431 Retained earnings 865 534 Accumulated other comprehensive loss (862) (880) Treasury shares (1 and 2 million shares, respectively) (12) (18) Total Amcor plc shareholders' equity 4,026 4,082 Non-controlling interests 64 59 Total shareholders' equity 4,090 4,141 Total liabilities and shareholders' equity $ 17,003 $ 17,426 See accompanying notes to consolidated financial statements. 5"
+        }
+      ]
+    }
+  },
+  {
+    "id": "financebench_id_01079",
+    "input": "What are major acquisitions that AMCOR has done in FY2023, FY2022 and FY2021?",
+    "expected_output": "Amcor completed these acquisitions during FY2023:\n-100% equity interest of a flexibles manufacturing company in the Czech Republic\n- 100% equity interest in a medical device packaging manufacturing site in\nShanghai, China.\n-acquisition of a New Zealand-based leading manufacturer of state-of-the-art, automated protein\npackaging machines.",
+    "acceptable_sources": [
+      "AMCOR_2023_10K.pdf"
+    ],
+    "metadata": {
+      "benchmark": "FinanceBench OPEN_SOURCE",
+      "split": "dev",
+      "company": "Amcor",
+      "doc_name": "AMCOR_2023_10K",
+      "question_type": "domain-relevant",
+      "question_reasoning": "Information extraction",
+      "domain_question_num": "dg10",
+      "justification": null,
+      "gold_evidence": [
+        {
+          "source": "AMCOR_2023_10K.pdf",
+          "page_index": 63,
+          "excerpt": "On August 1, 2022, the Company completed the acquisition of 100% equity interest in a Czech Republic company that operates a world-class flexible packaging manufacturing plant. The purchase consideration of $59 million included a deferred portion of $5 million that was paid in the first quarter of fiscal year 2024. The acquisition is part of the Company's Flexibles reportable segment and resulted in the recognition of acquired identifiable net assets of $36 million and goodwill of $23 million. Goodwill is not deductible for tax purposes. The fair values of the identifiable net assets acquired and goodwill are based on the Company's best estimate as of June 30, 2023. On March 17, 2023, the Company completed the acquisition of 100% equity interest in a medical device packaging manufacturing site in Shanghai, China. The purchase consideration of $60 million is subject to customary post-closing adjustments. The consideration includes contingent consideration of $20 million, to be earned and paid in cash over the three years following the acquisition date, subject to meeting certain performance targets. The acquisition is part of the Company's Flexibles reportable segment and resulted in the recognition of acquired identifiable net assets of $21 million and goodwill of $39 million. Goodwill is not deductible for tax purposes. The fair values of the contingent consideration, identifiable net assets acquired, and goodwill are based on the Company's best estimate as of June 30, 2023, and are considered preliminary. The Company aims to complete the purchase price allocation as soon as practicable but no later than one year from the date of the acquisition. On May 31, 2023, the Company completed the acquisition of a New Zealand based leading manufacturer of state-of-the-art, automated protein packaging machines. The purchase consideration of $45 million is subject to customary post-closing adjustments. The consideration includes contingent consideration of $13 million, to be earned and paid in cash over the two years following the acquisition date, subject to meeting certain performance targets. The acquisition is part of the Company's Flexibles reportable segment and resulted in the recognition of acquired identifiable net assets of $9 million and goodwill of $36 million. Goodwill is deductible for tax purposes. The fair values of the contingent consideration, identifiable net assets acquired, and goodwill are based on the Company's best estimate as of June 30, 2023, and are considered preliminary. The Company aims to complete the purchase price allocation as soon as practicable but no later than one year from the date of the acquisition."
+        }
+      ]
+    }
+  },
+  {
+    "id": "financebench_id_01148",
+    "input": "What industry does AMCOR primarily operate in?",
+    "expected_output": "Amcor is a global leader in packaging production for various use cases.",
+    "acceptable_sources": [
+      "AMCOR_2023_10K.pdf"
+    ],
+    "metadata": {
+      "benchmark": "FinanceBench OPEN_SOURCE",
+      "split": "dev",
+      "company": "Amcor",
+      "doc_name": "AMCOR_2023_10K",
+      "question_type": "domain-relevant",
+      "question_reasoning": "Information extraction OR Logical reasoning OR",
+      "domain_question_num": "dg12",
+      "justification": null,
+      "gold_evidence": [
+        {
+          "source": "AMCOR_2023_10K.pdf",
+          "page_index": 4,
+          "excerpt": "Today, we are a global leader in developing and producing responsible packaging for food, beverage, pharmaceutical, medical, home and personal-care, and other products"
+        }
+      ]
+    }
+  },
+  {
+    "id": "financebench_id_00684",
+    "input": "Does AMCOR have an improving gross margin profile as of FY2023? If gross margin is not a useful metric for a company like this, then state that and explain why.",
+    "expected_output": "No. For AMCOR there has been a slight decline in gross margins by 0.8%.",
+    "acceptable_sources": [
+      "AMCOR_2023_10K.pdf"
+    ],
+    "metadata": {
+      "benchmark": "FinanceBench OPEN_SOURCE",
+      "split": "dev",
+      "company": "Amcor",
+      "doc_name": "AMCOR_2023_10K",
+      "question_type": "domain-relevant",
+      "question_reasoning": "Numerical reasoning OR information extraction",
+      "domain_question_num": "dg13",
+      "justification": "Gross Profit/Net Sales\n2725/14694\n2820/14544",
+      "gold_evidence": [
+        {
+          "source": "AMCOR_2023_10K.pdf",
+          "page_index": 49,
+          "excerpt": "Amcor plc and Subsidiaries Consolidated Statements of Income ($ in millions, except per share data) For the years ended June 30, 2023 2022 2021 Net sales $ 14,694 $ 14,544 $ 12,861 Cost of sales (11,969) (11,724) (10,129) Gross profit 2,725 2,820 2,732"
+        }
+      ]
+    }
+  },
+  {
+    "id": "financebench_id_00476",
+    "input": "Which debt securities are registered to trade on a national securities exchange under American Express' name as of 2022?",
+    "expected_output": "There are none",
+    "acceptable_sources": [
+      "AMERICANEXPRESS_2022_10K.pdf"
+    ],
+    "metadata": {
+      "benchmark": "FinanceBench OPEN_SOURCE",
+      "split": "dev",
+      "company": "American Express",
+      "doc_name": "AMERICANEXPRESS_2022_10K",
+      "question_type": "domain-relevant",
+      "question_reasoning": "Information extraction",
+      "domain_question_num": "dg04",
+      "justification": "No debt securities are listed under the securities registered pursuant to Section 12(b) of the Act, which implies there are none",
+      "gold_evidence": [
+        {
+          "source": "AMERICANEXPRESS_2022_10K.pdf",
+          "page_index": 0,
+          "excerpt": "Registrants telephone number, including area code: (212) 640-2000 Securities registered pursuant to Section 12(b) of the Act: Title of each class Trading Symbol(s) Name of each exchange on which registered Common Shares (par value $0.20 per Share) AXP New York Stock Exchange Securities registered pursuant to section 12(g) of the Act: None"
+        }
+      ]
+    }
+  },
+  {
+    "id": "financebench_id_01028",
+    "input": "What are the geographies that American Express primarily operates in as of 2022?",
+    "expected_output": "United States, EMEA, APAC, and LACC",
+    "acceptable_sources": [
+      "AMERICANEXPRESS_2022_10K.pdf"
+    ],
+    "metadata": {
+      "benchmark": "FinanceBench OPEN_SOURCE",
+      "split": "dev",
+      "company": "American Express",
+      "doc_name": "AMERICANEXPRESS_2022_10K",
+      "question_type": "domain-relevant",
+      "question_reasoning": "Information extraction",
+      "domain_question_num": "dg08",
+      "justification": null,
+      "gold_evidence": [
+        {
+          "source": "AMERICANEXPRESS_2022_10K.pdf",
+          "page_index": 154,
+          "excerpt": "(Millions) United States EMEA APAC LACC Other Unallocated Consolidated 2022 Total revenues net of interest expense $ 41,396 $ 4,871 $ 3,835 $ 2,917 $ (157) $ 52,862 Pretax income (loss) from continuing operations 10,383 550 376 500 (2,224) 9,585 2021 Total revenues net of interest expense $ 33,103 $ 3,643 $ 3,418 $ 2,238 $ (22) $ 42,380 Pretax income (loss) from continuing operations 10,325 460 420 494 (1,010) 10,689 2020 Total revenues net of interest expense $ 28,263 $ 3,087 $ 3,271 $ 2,019 $ (553) $ 36,087 Pretax income (loss) from continuing operations 5,422 187 328 273 (1,914) 4,296"
+        }
+      ]
+    }
+  },
+  {
+    "id": "financebench_id_00723",
+    "input": "Does AMEX have an improving operating margin profile as of 2022? If operating margin is not a useful metric for a company like this, then state that and explain why.",
+    "expected_output": "Performance is not measured through operating margin",
+    "acceptable_sources": [
+      "AMERICANEXPRESS_2022_10K.pdf"
+    ],
+    "metadata": {
+      "benchmark": "FinanceBench OPEN_SOURCE",
+      "split": "dev",
+      "company": "American Express",
+      "doc_name": "AMERICANEXPRESS_2022_10K",
+      "question_type": "domain-relevant",
+      "question_reasoning": "Numerical reasoning OR information extraction",
+      "domain_question_num": "dg14",
+      "justification": "It's a financial services company and performance is measured through the Net Interest Margin.",
+      "gold_evidence": [
+        {
+          "source": "AMERICANEXPRESS_2022_10K.pdf",
+          "page_index": 95,
+          "excerpt": "CONSOLIDATED STATEMENTS OF INCOME Year Ended December 31 (Millions, except per share amounts) 2022 2021 2020 Revenues Non-interest revenues Discount revenue $ 30,739 $ 24,563 $ 19,435 Net card fees 6,070 5,195 4,664 Service fees and other revenue 4,521 3,316 2,702 Processed revenue 1,637 1,556 1,301 Total non-interest revenues 42,967 34,630 28,102 Interest income Interest on loans 11,967 8,850 9,779 Interest and dividends on investment securities 96 83 127 Deposits with banks and other 595 100 177 Total interest income 12,658 9,033 10,083 Interest expense Deposits 1,527 458 943 Long-term debt and other 1,236 825 1,155 Total interest expense 2,763 1,283 2,098 Net interest income 9,895 7,750 7,985 Total revenues net of interest expense 52,862 42,380 36,087 Provisions for credit losses Card Member receivables 627 (73) 1,015 Card Member loans 1,514 (1,155) 3,453 Other 41 (191) 262 Total provisions for credit losses 2,182 (1,419) 4,730 Total revenues net of interest expense after provisions for credit losses 50,680 43,799 31,357 Expenses Card Member rewards 14,002 11,007 8,041 Business development 4,943 3,762 3,051 Card Member services 2,959 1,993 1,230 Marketing 5,458 5,291 3,696 Salaries and employee benefits 7,252 6,240 5,718 Other, net 6,481 4,817 5,325 Total expenses 41,095 33,110 27,061 Pretax income 9,585 10,689 4,296 Income tax provision 2,071 2,629 1,161 Net income $ 7,514 $ 8,060 $ 3,135 Earnings per Common Share (Note 21) Basic $ 9.86 $ 10.04 $ 3.77 Diluted $ 9.85 $ 10.02 $ 3.77 Average common shares outstanding for earnings per common share: Basic 751 789 805 Diluted 752 790 806"
+        }
+      ]
+    }
+  },
+  {
+    "id": "financebench_id_00720",
+    "input": "What drove gross margin change as of the FY2022 for American Express? If gross margin is not a useful metric for a company like this, then please state that and explain why.",
+    "expected_output": "Performance is not measured through gross margin",
+    "acceptable_sources": [
+      "AMERICANEXPRESS_2022_10K.pdf"
+    ],
+    "metadata": {
+      "benchmark": "FinanceBench OPEN_SOURCE",
+      "split": "dev",
+      "company": "American Express",
+      "doc_name": "AMERICANEXPRESS_2022_10K",
+      "question_type": "domain-relevant",
+      "question_reasoning": "Logical reasoning (based on numerical reasoning) OR Numerical reasoning OR Logical reasoning",
+      "domain_question_num": "dg16",
+      "justification": "It's a financial services company and performance is measured through the Net Interest Margin.",
+      "gold_evidence": [
+        {
+          "source": "AMERICANEXPRESS_2022_10K.pdf",
+          "page_index": 95,
+          "excerpt": "CONSOLIDATED STATEMENTS OF INCOME Year Ended December 31 (Millions, except per share amounts) 2022 2021 2020 Revenues Non-interest revenues Discount revenue $ 30,739 $ 24,563 $ 19,435 Net card fees 6,070 5,195 4,664 Service fees and other revenue 4,521 3,316 2,702 Processed revenue 1,637 1,556 1,301 Total non-interest revenues 42,967 34,630 28,102 Interest income Interest on loans 11,967 8,850 9,779 Interest and dividends on investment securities 96 83 127 Deposits with banks and other 595 100 177 Total interest income 12,658 9,033 10,083 Interest expense Deposits 1,527 458 943 Long-term debt and other 1,236 825 1,155 Total interest expense 2,763 1,283 2,098 Net interest income 9,895 7,750 7,985 Total revenues net of interest expense 52,862 42,380 36,087 Provisions for credit losses Card Member receivables 627 (73) 1,015 Card Member loans 1,514 (1,155) 3,453 Other 41 (191) 262 Total provisions for credit losses 2,182 (1,419) 4,730 Total revenues net of interest expense after provisions for credit losses 50,680 43,799 31,357 Expenses Card Member rewards 14,002 11,007 8,041 Business development 4,943 3,762 3,051 Card Member services 2,959 1,993 1,230 Marketing 5,458 5,291 3,696 Salaries and employee benefits 7,252 6,240 5,718 Other, net 6,481 4,817 5,325 Total expenses 41,095 33,110 27,061 Pretax income 9,585 10,689 4,296 Income tax provision 2,071 2,629 1,161 Net income $ 7,514 $ 8,060 $ 3,135 Earnings per Common Share (Note 21) Basic $ 9.86 $ 10.04 $ 3.77 Diluted $ 9.85 $ 10.02 $ 3.77 Average common shares outstanding for earnings per common share: Basic 751 789 805 Diluted 752 790 806"
+        }
+      ]
+    }
+  },
+  {
+    "id": "financebench_id_01351",
+    "input": "How much has the effective tax rate of American Express changed between FY2021 and FY2022?",
+    "expected_output": "The effective tax rate for American Express has changed/dropped from 24.6% in FY 2021 to 21.6% in FY 2022.",
+    "acceptable_sources": [
+      "AMERICANEXPRESS_2022_10K.pdf"
+    ],
+    "metadata": {
+      "benchmark": "FinanceBench OPEN_SOURCE",
+      "split": "dev",
+      "company": "American Express",
+      "doc_name": "AMERICANEXPRESS_2022_10K",
+      "question_type": "domain-relevant",
+      "question_reasoning": "Numerical reasoning",
+      "domain_question_num": "dg23",
+      "justification": null,
+      "gold_evidence": [
+        {
+          "source": "AMERICANEXPRESS_2022_10K.pdf",
+          "page_index": 43,
+          "excerpt": "TABLE 1: SUMMARY OF FINANCIAL PERFORMANCE Years Ended December 31, Change Change (Millions, except percentages, per share amounts and where indicated) 2022 2021 2020 2022 vs. 2021 2021 vs. 2020 Selected Income Statement Data Total revenues net of interest expense $ 52,862 $ 42,380 $ 36,087 $ 10,482 25 % $ 6,293 17 % Provisions for credit losses 2,182 (1,419) 4,730 3,601 # (6,149) # Expenses 41,095 33,110 27,061 7,985 24 6,049 22 Pretax income 9,585 10,689 4,296 (1,104) (10) 6,393 # Income tax provision 2,071 2,629 1,161 (558) (21) 1,468 # Net income 7,514 8,060 3,135 (546) (7) 4,925 # Earnings per common share diluted $ 9.85 $ 10.02 $ 3.77 $ (0.17) (2)% $ 6.25 # % Common Share Statistics Cash dividends declared per common share $ 2.08 $ 1.72 $ 1.72 $ 0.36 21 % $ % Average common shares outstanding: Basic 751 789 805 (38) (5)% (16) (2)% Diluted 752 790 806 (38) (5)% (16) (2)% Selected Metrics and Ratios Network volumes (Billions) $ 1,552.8 $ 1,284.2 $ 1,037.8 $ 269 21 % $ 246 24 % Return on average equity 32.3 % 33.7 % 14.2 % Net interest income divided by average Card Member loans 10.4 % 10.2 % 10.7 % Net interest yield on average Card Member loans 10.6 % 10.7 % 11.5 % Effective tax rate 21.6 % 24.6 % 27.0 % Common Equity Tier 1 10.3 % 10.5 % 13.5 % Selected Balance Sheet Data Cash and cash equivalents $ 33,914 $ 22,028 $ 32,965 $ 11,886 54 % $ (10,937) (33)% Card Member receivables 57,613 53,645 43,701 3,968 7 9,944 23 Card Member loans 107,964 88,562 73,373 19,402 22 15,189 21 Customer deposits 110,239 84,382 86,875 25,857 31 (2,493) (3) Long-term debt $ 42,573 $ 38,675 $ 42,952 $ 3,898 10 % $ (4,277) (10)%"
+        }
+      ]
+    }
+  },
+  {
+    "id": "financebench_id_01964",
+    "input": "What was the largest liability in American Express's Balance Sheet in 2022?",
+    "expected_output": "Customer deposits",
+    "acceptable_sources": [
+      "AMERICANEXPRESS_2022_10K.pdf"
+    ],
+    "metadata": {
+      "benchmark": "FinanceBench OPEN_SOURCE",
+      "split": "dev",
+      "company": "American Express",
+      "doc_name": "AMERICANEXPRESS_2022_10K",
+      "question_type": "novel-generated",
+      "question_reasoning": null,
+      "domain_question_num": null,
+      "justification": null,
+      "gold_evidence": [
+        {
+          "source": "AMERICANEXPRESS_2022_10K.pdf",
+          "page_index": 97,
+          "excerpt": "CONSOLIDATED BALANCE SHEETS December 31 (Millions, except share data) 2022 2021 Assets Cash and cash equivalents Cash and due from banks (includes restricted cash of consolidated variable interest entities: 2022, $5; 2021, $11) $ 5,510 $ 1,292 Interest-bearing deposits in other banks (includes securities purchased under resale agreements: 2022, $318; 2021, $463) 28,097 20,548 Short-term investment securities (includes restricted investments of consolidated variable interest entities: 2022, $54; 2021, $32) 307 188 Total cash and cash equivalents 33,914 22,028 Card Member receivables (includes gross receivables available to settle obligations of a consolidated variable interest entity: 2022, $5,193; 2021, $5,175), less reserves for credit losses: 2022, $229; 2021, $64 57,384 53,581 Card Member loans (includes gross loans available to settle obligations of a consolidated variable interest entity: 2022, $28,461; 2021, $26,587), less reserves for credit losses: 2022, $3,747; 2021, $3,305 104,217 85,257 Other loans, less reserves for credit losses: 2022, $59; 2021, $52 5,357 2,859 Investment securities 4,578 2,591 Premises and equipment, less accumulated depreciation and amortization: 2022, $9,850; 2021, $8,602 5,215 4,988 Other assets, less reserves for credit losses: 2022, $22; 2021, $25 17,689 17,244 Total assets $ 228,354 $ 188,548 Liabilities and Shareholders Equity Liabilities Customer deposits $ 110,239 $ 84,382 Accounts payable 12,133 10,574 Short-term borrowings 1,348 2,243 Long-term debt (includes debt issued by consolidated variable interest entities: 2022, $12,662; 2021, $13,803) 42,573 38,675 Other liabilities 37,350 30,497 Total liabilities $ 203,643 $ 166,371 Contingencies and Commitments (Note 12) Shareholders Equity Preferred shares, $1.66 par value, authorized 20 million shares; issued and outstanding 1,600 shares as of December 31, 2022 and 2021 (Note 16) Common shares, $0.20 par value, authorized 3.6 billion shares; issued and outstanding 743 million shares as of December 31, 2022 and 761 million shares as of December 31, 2021 149 153 Additional paid-in capital 11,493 11,495 Retained earnings 16,279 13,474 Accumulated other comprehensive income (loss) (3,210) (2,945) Total shareholders equity 24,711 22,177 Total liabilities and shareholders equity $ 228,354 $ 188,548"
+        }
+      ]
+    }
+  },
+  {
+    "id": "financebench_id_01981",
+    "input": "Was American Express able to retain card members during 2022?",
+    "expected_output": "Yes",
+    "acceptable_sources": [
+      "AMERICANEXPRESS_2022_10K.pdf"
+    ],
+    "metadata": {
+      "benchmark": "FinanceBench OPEN_SOURCE",
+      "split": "dev",
+      "company": "American Express",
+      "doc_name": "AMERICANEXPRESS_2022_10K",
+      "question_type": "novel-generated",
+      "question_reasoning": null,
+      "domain_question_num": null,
+      "justification": null,
+      "gold_evidence": [
+        {
+          "source": "AMERICANEXPRESS_2022_10K.pdf",
+          "page_index": 44,
+          "excerpt": "Net card fees increased 17 percent year over-year, as new card acquisitions reached record levels in 2022 and Card Member retention remained high, demonstrating the impact of investments we have made in our premium value propositions"
+        }
+      ]
+    }
+  },
+  {
+    "id": "financebench_id_00517",
+    "input": "Are there any product categories / service categories that represent more than 20% of Boeing's revenue for FY2022?",
+    "expected_output": "Yes. Boeing has product and service categories that represent more than 20% of Boeing's revenue for FY2022. These categories are Commercial Airplanes which comprises 39% of total revenue, Defence which comprises 35% of total revenue and Services which comprises 26% of total revenue.",
+    "acceptable_sources": [
+      "BOEING_2022_10K.pdf"
+    ],
+    "metadata": {
+      "benchmark": "FinanceBench OPEN_SOURCE",
+      "split": "dev",
+      "company": "Boeing",
+      "doc_name": "BOEING_2022_10K",
+      "question_type": "domain-relevant",
+      "question_reasoning": "Logical reasoning (based on numerical reasoning)",
+      "domain_question_num": "dg09",
+      "justification": "Commercial Airplanes%=Revenues: Commercial Airplanes/Total revenues*100=25,867/66,608*100=39%. Defence%=Defense, Space & Security/Total revenues*100=23,162/66,608*100=35%. Services%=Global Services/Total revenues*100=17,611/66,608*100=26%.",
+      "gold_evidence": [
+        {
+          "source": "BOEING_2022_10K.pdf",
+          "page_index": 61,
+          "excerpt": "The Boeing Company and Subsidiaries Notes to the Consolidated Financial Statements Summary of Business Segment Data (Dollars in millions) Years ended December 31, 2022 2021 2020 Revenues: Commercial Airplanes $25,867 $19,493 $16,162 Defense, Space & Security 23,162 26,540 26,257 Global Services 17,611 16,328 15,543 Boeing Capital 199 272 261 Unallocated items, eliminations and other (231) (347) (65) Total revenues $66,608 $62,286 $58,158"
+        }
+      ]
+    }
+  },
+  {
+    "id": "financebench_id_01091",
+    "input": "Has Boeing reported any materially important ongoing legal battles from FY2022?",
+    "expected_output": "Yes. Multiple lawsuits have been filed against Boeing resulting from a 2018 Lion Air crash and a 2019 Ethiopian Airlines crash.",
+    "acceptable_sources": [
+      "BOEING_2022_10K.pdf"
+    ],
+    "metadata": {
+      "benchmark": "FinanceBench OPEN_SOURCE",
+      "split": "dev",
+      "company": "Boeing",
+      "doc_name": "BOEING_2022_10K",
+      "question_type": "domain-relevant",
+      "question_reasoning": "Information extraction",
+      "domain_question_num": "dg11",
+      "justification": null,
+      "gold_evidence": [
+        {
+          "source": "BOEING_2022_10K.pdf",
+          "page_index": 112,
+          "excerpt": "Multiple legal actions have been filed against us as a result of the October 29, 2018 accident of Lion Air Flight 610 and the March 10, 2019 accident of Ethiopian Airlines Flight 302."
+        }
+      ]
+    }
+  },
+  {
+    "id": "financebench_id_00678",
+    "input": "Does Boeing have an improving gross margin profile as of FY2022? If gross margin is not a useful metric for a company like this, then state that and explain why.",
+    "expected_output": "Yes. Boeing has an improving gross margin profile as of FY2022. Gross profit improved from $3,017 million in FY2021 to $3,502 million in FY2022. Gross margin % improved from 4.8% in FY2021 to 5.3% in FY2022.",
+    "acceptable_sources": [
+      "BOEING_2022_10K.pdf"
+    ],
+    "metadata": {
+      "benchmark": "FinanceBench OPEN_SOURCE",
+      "split": "dev",
+      "company": "Boeing",
+      "doc_name": "BOEING_2022_10K",
+      "question_type": "domain-relevant",
+      "question_reasoning": "Numerical reasoning OR information extraction",
+      "domain_question_num": "dg13",
+      "justification": "Gross margin%=Gross margin/Total revenues*100=3,502/66,608*100=5.3% for 2022 and 3,017/62,286*100=4.8% for 2021.",
+      "gold_evidence": [
+        {
+          "source": "BOEING_2022_10K.pdf",
+          "page_index": 54,
+          "excerpt": "The Boeing Company and Subsidiaries Consolidated Statements of Operations (Dollars in millions, except per share data) Years ended December 31, 2022 2021 2020 Sales of products $55,893 $51,386 $47,142 Sales of services 10,715 10,900 11,016 Total revenues 66,608 62,286 58,158 Cost of products (53,969) (49,954) (54,568) Cost of services (9,109) (9,283) (9,232) Boeing Capital interest expense (28) (32) (43) Total costs and expenses (63,106) (59,269) (63,843) 3,502 3,017 (5,685)"
+        }
+      ]
+    }
+  },
+  {
+    "id": "financebench_id_01290",
+    "input": "Who are the primary customers of Boeing as of FY2022?",
+    "expected_output": "Boeing's primary customers as of FY2022 are a limited number of commercial airlines and the US government. The US government accounted for 40% of Boeing's total revenues in FY2022.",
+    "acceptable_sources": [
+      "BOEING_2022_10K.pdf"
+    ],
+    "metadata": {
+      "benchmark": "FinanceBench OPEN_SOURCE",
+      "split": "dev",
+      "company": "Boeing",
+      "doc_name": "BOEING_2022_10K",
+      "question_type": "domain-relevant",
+      "question_reasoning": "Information extraction OR Logical reasoning",
+      "domain_question_num": "dg20",
+      "justification": null,
+      "gold_evidence": [
+        {
+          "source": "BOEING_2022_10K.pdf",
+          "page_index": 7,
+          "excerpt": "We derive a significant portion of our revenues from a limited number of commercial airlines."
+        },
+        {
+          "source": "BOEING_2022_10K.pdf",
+          "page_index": 9,
+          "excerpt": "We derive a substantial portion of our revenue from the U.S. government"
+        },
+        {
+          "source": "BOEING_2022_10K.pdf",
+          "page_index": 13,
+          "excerpt": "In 2022, 40% of our revenues were earned pursuant to U.S. government contracts"
+        }
+      ]
+    }
+  },
+  {
+    "id": "financebench_id_00464",
+    "input": "Is Boeing's business subject to cyclicality?",
+    "expected_output": "Yes, Boeing's business is subject to cyclicality due to its exposure to the airline industry which is a cyclical industry.",
+    "acceptable_sources": [
+      "BOEING_2022_10K.pdf"
+    ],
+    "metadata": {
+      "benchmark": "FinanceBench OPEN_SOURCE",
+      "split": "dev",
+      "company": "Boeing",
+      "doc_name": "BOEING_2022_10K",
+      "question_type": "novel-generated",
+      "question_reasoning": null,
+      "domain_question_num": null,
+      "justification": "A major portion of Boeing's revenue is derived from the sale of aircraft to commercial airlines. The commercial airlines business is cyclical, and subject to significant profit swings.",
+      "gold_evidence": [
+        {
+          "source": "BOEING_2022_10K.pdf",
+          "page_index": 7,
+          "excerpt": "Historically, the airline industry has been cyclical and very competitive and has experienced significant profit swings and constant challenges to be more cost competitive."
+        }
+      ]
+    }
+  },
+  {
+    "id": "financebench_id_00494",
+    "input": "What production rate changes is Boeing forecasting for FY2023?",
+    "expected_output": "Boeing forecasts an increase in the production rates for the 737, 777X and 787 aircrafts in 2023.",
+    "acceptable_sources": [
+      "BOEING_2022_10K.pdf"
+    ],
+    "metadata": {
+      "benchmark": "FinanceBench OPEN_SOURCE",
+      "split": "dev",
+      "company": "Boeing",
+      "doc_name": "BOEING_2022_10K",
+      "question_type": "novel-generated",
+      "question_reasoning": null,
+      "domain_question_num": null,
+      "justification": "Boeing plans to gradually increase production rates for the 737 and 787 and to resume production of 777X.",
+      "gold_evidence": [
+        {
+          "source": "BOEING_2022_10K.pdf",
+          "page_index": 8,
+          "excerpt": "We must minimize disruption caused by production changes, achieve operational stability and implement productivity improvements in order to meet customer demand and maintain our profitability. We have previously announced plans to adjust production rates on several of our commercial aircraft programs. The 787 program is currently producing at low rates and we expect to gradually increase to 5 per month in 2023. Production of the 777X is currently paused and is expected to resume in 2023. The 737 program has experienced operational and supply chain challenges stabilizing production at 31 per month. We plan to gradually increase 737 production rates based on market demand and supply chain capacity."
+        }
+      ]
+    }
+  },
+  {
+    "id": "financebench_id_00585",
+    "input": "How does Boeing's effective tax rate in FY2022 compare to FY2021?",
+    "expected_output": "Effective tax rate in FY2022 was 0.62%, compared to  -14.76% in FY2021.",
+    "acceptable_sources": [
+      "BOEING_2022_10K.pdf"
+    ],
+    "metadata": {
+      "benchmark": "FinanceBench OPEN_SOURCE",
+      "split": "dev",
+      "company": "Boeing",
+      "doc_name": "BOEING_2022_10K",
+      "question_type": "novel-generated",
+      "question_reasoning": null,
+      "domain_question_num": null,
+      "justification": "Effective tax rate=Income tax (expense) benefit/ Loss before income taxes*100=(31)/(5,022)*100=0.62% in 2022 and 743/(5,033)*100=-14.76%.",
+      "gold_evidence": [
+        {
+          "source": "BOEING_2022_10K.pdf",
+          "page_index": 54,
+          "excerpt": "The Boeing Company and Subsidiaries Consolidated Statements of Operations (Dollars in millions, except per share data) Years ended December 31, 2022 2021 2020 Sales of products $55,893 $51,386 $47,142 Sales of services 10,715 10,900 11,016 Total revenues 66,608 62,286 58,158 Cost of products (53,969) (49,954) (54,568) Cost of services (9,109) (9,283) (9,232) Boeing Capital interest expense (28) (32) (43) Total costs and expenses (63,106) (59,269) (63,843) 3,502 3,017 (5,685) (Loss)/income from operating investments, net (16) 210 9 General and administrative expense (4,187) (4,157) (4,817) Research and development expense, net (2,852) (2,249) (2,476) Gain on dispositions, net 6 277 202 Loss from operations (3,547) (2,902) (12,767) Other income, net 1,058 551 447 Interest and debt expense (2,533) (2,682) (2,156) Loss before income taxes (5,022) (5,033) (14,476) Income tax (expense)/benefit (31) 743 2,535"
+        }
+      ]
+    }
+  }
+]

@@ -166,6 +166,8 @@ function resize(): void {
           min="1"
           :max="currentConversation.max_speakers_per_turn"
           :disabled="disabled"
+          placeholder="示例：2"
+          title="限制本轮实际参与回复的角色数量"
         />
       </label>
     </div>

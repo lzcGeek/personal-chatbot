@@ -4,6 +4,7 @@ import { storeToRefs } from 'pinia'
 
 import ChatWindow from './components/ChatWindow.vue'
 import LoginView from './components/LoginView.vue'
+import ToastHost from './components/ToastHost.vue'
 import { useAuthStore } from './stores/auth'
 
 
@@ -26,4 +27,5 @@ onBeforeUnmount(() => window.removeEventListener('auth:unauthorized', handleUnau
   <div v-if="!initialized" class="app-loading">正在检查登录状态…</div>
   <ChatWindow v-else-if="user" />
   <LoginView v-else />
+  <ToastHost />
 </template>
