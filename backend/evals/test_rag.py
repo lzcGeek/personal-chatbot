@@ -2,9 +2,17 @@
 
 import json
 import os
+import sys
 import uuid
 from pathlib import Path
 from typing import Any
+
+
+EVALS_DIR = Path(__file__).resolve().parent
+BACKEND_DIR = EVALS_DIR.parent
+PROJECT_ROOT = EVALS_DIR.parents[1]
+if str(BACKEND_DIR) not in sys.path:
+    sys.path.insert(0, str(BACKEND_DIR))
 
 import httpx
 import pytest
@@ -24,9 +32,6 @@ from evals.deepeval_metrics import (
     NumericAnswerCorrectnessMetric,
 )
 
-
-EVALS_DIR = Path(__file__).resolve().parent
-PROJECT_ROOT = EVALS_DIR.parents[1]
 DEFAULT_DATASET_PATH = EVALS_DIR / "datasets" / "rag_goldens.json"
 load_dotenv(PROJECT_ROOT / ".env")
 
